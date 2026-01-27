@@ -2,6 +2,20 @@
 
 import { useState } from 'react';
 
+// Helper function to get CM vendor-specific CSS class
+function getCmClass(vendor) {
+  const vendorLower = vendor.toLowerCase();
+  if (vendorLower.includes('onetrust')) return 'cm-onetrust';
+  if (vendorLower.includes('trustarc')) return 'cm-trustarc';
+  if (vendorLower.includes('cookiebot')) return 'cm-cookiebot';
+  if (vendorLower.includes('cookieyes')) return 'cm-cookieyes';
+  if (vendorLower.includes('osano')) return 'cm-osano';
+  if (vendorLower.includes('securiti')) return 'cm-securiti';
+  if (vendorLower.includes('transcend')) return 'cm-transcend';
+  if (vendorLower.includes('ketch')) return 'cm-ketch';
+  return 'cm-default';
+}
+
 export default function Home() {
   const [urls, setUrls] = useState('');
   const [results, setResults] = useState([]);
@@ -103,8 +117,8 @@ export default function Home() {
     if (results.length === 0) return;
 
     const headers = activeTab === 'quick'
-      ? ['URL', 'Status', 'CMP', 'Consent Signals', 'Tag Manager', 'Third-Party Cookies', 'Platform']
-      : ['URL', 'Status', 'CMP', 'Consent Signals', 'Tag Manager', 'Third-Party Cookies', 'Platform', 'DSAR', 'Trust Center', 'Privacy Policy Generator'];
+      ? ['URL', 'Status', 'CM', 'Consent Signals', 'Tag Manager', 'Third-Party Cookies', 'Platform']
+      : ['URL', 'Status', 'CM', 'Consent Signals', 'Tag Manager', 'Third-Party Cookies', 'Platform', 'DSAR', 'Trust Center', 'Privacy Policy Generator'];
 
     const rows = results.map(r => {
       const baseRow = [
@@ -367,7 +381,7 @@ export default function Home() {
                     <tr>
                       <th>URL</th>
                       <th>Status</th>
-                      <th>CMP</th>
+                      <th>CM</th>
                       <th>Consent Signals</th>
                       <th>Tag Manager</th>
                       <th>Third-Party Cookies</th>
@@ -386,7 +400,7 @@ export default function Home() {
                           </td>
                           <td>
                             {result.cmp?.map((c, i) => (
-                              <span key={i} className="tag cmp">{c}</span>
+                              <span key={i} className={`tag ${getCmClass(c)}`}>{c}</span>
                             ))}
                           </td>
                           <td>
@@ -424,7 +438,7 @@ export default function Home() {
                               <path d="M9 14l2 2 4-4" />
                             </svg>
                             <p>No results yet</p>
-                            <span>Enter URLs above and click "Quick Scan" to detect CMPs, Tag Managers, and Platforms</span>
+                            <span>Enter URLs above and click "Quick Scan" to detect Consent Managers, Tag Managers, and Platforms</span>
                           </div>
                         </td>
                       </tr>
@@ -440,7 +454,7 @@ export default function Home() {
                       <th>DSAR Platform</th>
                       <th>Trust Center</th>
                       <th>Privacy Policy Generator</th>
-                      <th>CMP</th>
+                      <th>CM</th>
                       <th>Tag Manager</th>
                     </tr>
                   </thead>
@@ -471,7 +485,7 @@ export default function Home() {
                           </td>
                           <td>
                             {result.cmp?.map((c, i) => (
-                              <span key={i} className="tag cmp">{c}</span>
+                              <span key={i} className={`tag ${getCmClass(c)}`}>{c}</span>
                             ))}
                           </td>
                           <td>

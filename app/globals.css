@@ -565,52 +565,93 @@ body {
 .tag {
   display: inline-block;
   padding: 3px 8px;
-  background: rgba(139, 92, 246, 0.1);
-  color: var(--accent-purple);
+  background: rgba(107, 114, 128, 0.15);
+  color: #6b7280;
   border-radius: 4px;
   font-size: 11px;
   margin: 2px 4px 2px 0;
   font-weight: 500;
 }
 
-.tag.cmp {
-  background: rgba(236, 72, 153, 0.1);
-  color: var(--accent-pink);
+/* CM vendor-specific colors */
+.tag.cm-onetrust {
+  background: rgba(22, 101, 52, 0.15);
+  color: #166534;
+}
+
+.tag.cm-trustarc {
+  background: rgba(126, 34, 206, 0.15);
+  color: #7e22ce;
+}
+
+.tag.cm-cookiebot {
+  background: rgba(30, 58, 138, 0.15);
+  color: #1e3a8a;
+}
+
+.tag.cm-cookieyes {
+  background: rgba(37, 99, 235, 0.15);
+  color: #2563eb;
+}
+
+.tag.cm-osano {
+  background: rgba(126, 34, 206, 0.15);
+  color: #7e22ce;
+}
+
+.tag.cm-securiti {
+  background: rgba(56, 189, 248, 0.2);
+  color: #0284c7;
+}
+
+.tag.cm-transcend {
+  background: rgba(234, 88, 12, 0.15);
+  color: #ea580c;
+}
+
+.tag.cm-ketch {
+  background: rgba(168, 85, 247, 0.15);
+  color: #a855f7;
+}
+
+.tag.cm-default {
+  background: rgba(107, 114, 128, 0.15);
+  color: #6b7280;
 }
 
 .tag.consent {
-  background: rgba(59, 130, 246, 0.1);
-  color: var(--accent-blue);
+  background: rgba(107, 114, 128, 0.15);
+  color: #6b7280;
 }
 
 .tag.tm {
-  background: rgba(245, 158, 11, 0.1);
-  color: var(--warning);
+  background: rgba(107, 114, 128, 0.15);
+  color: #6b7280;
 }
 
 .tag.platform {
-  background: rgba(16, 185, 129, 0.1);
-  color: var(--success);
+  background: rgba(107, 114, 128, 0.15);
+  color: #6b7280;
 }
 
 .tag.cookie {
-  background: rgba(139, 92, 246, 0.1);
-  color: var(--accent-purple);
+  background: rgba(107, 114, 128, 0.15);
+  color: #6b7280;
 }
 
 .tag.dsar {
-  background: rgba(59, 130, 246, 0.1);
-  color: var(--accent-blue);
+  background: rgba(107, 114, 128, 0.15);
+  color: #6b7280;
 }
 
 .tag.trust {
-  background: rgba(16, 185, 129, 0.1);
-  color: var(--success);
+  background: rgba(107, 114, 128, 0.15);
+  color: #6b7280;
 }
 
 .tag.ppg {
-  background: rgba(236, 72, 153, 0.1);
-  color: var(--accent-pink);
+  background: rgba(107, 114, 128, 0.15);
+  color: #6b7280;
 }
 
 /* Empty State */

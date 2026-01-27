@@ -1,36 +1,101 @@
 import * as cheerio from 'cheerio';
 
-// Detection patterns from the desktop app
+// Strict CMP detection - only detect actual cookie banner/consent management scripts
+// These patterns look for specific script sources, SDK initializations, and banner elements
 const cookieBannerPatterns = {
-  'OneTrust': ['onetrust', 'optanon', 'ot-sdk'],
-  'Cookiebot': ['cookiebot', 'cybot', 'cookieconsent'],
-  'TrustArc': ['trustarc', 'truste', 'consent.trustarc'],
-  'Quantcast': ['quantcast', 'qc-cmp', '__qca'],
-  'Didomi': ['didomi', 'didomi-notice'],
-  'Osano': ['osano', 'osano-cm'],
-  'CookieYes': ['cookieyes', 'cky-consent'],
-  'Termly': ['termly', 't-consentPrompt'],
-  'iubenda': ['iubenda'],
-  'Sourcepoint': ['sourcepoint', 'sp_message'],
-  'Admiral': ['admiral', 'admiralcdn'],
-  'Cookie Notice': ['cookie-notice', 'cn-notice'],
-  'GDPR Cookie Compliance': ['gdpr-cookie', 'moove_gdpr'],
-  'Civic UK': ['civicuk', 'civic-cookie'],
-  'Cookie Law Info': ['cookie-law-info', 'cli-'],
-  'Complianz': ['complianz', 'cmplz'],
-  'CookiePro': ['cookiepro'],
-  'Evidon': ['evidon'],
-  'Cookie Script': ['cookie-script'],
-  'Crownpeak': ['crownpeak', 'evidon'],
-  'Usercentrics': ['usercentrics', 'uc-'],
-  'Klaro': ['klaro', 'klaro-'],
-  'Cookie Consent by Insites': ['cookieconsent', 'cc-window'],
-  'CookieFirst': ['cookiefirst'],
-  'Axeptio': ['axeptio'],
-  'Borlabs Cookie': ['borlabs-cookie'],
-  'Cookie Information': ['cookie-information'],
-  'LiveRamp': ['liveramp', 'ats.js'],
-  'Ketch': ['ketch', 'swb.js'],
+  'OneTrust': {
+    // Must find OneTrust-specific SDK scripts or banner elements
+    scripts: ['cdn.cookielaw.org', 'onetrust.com/consent', 'otSDKStub.js', 'otBannerSdk.js'],
+    elements: ['onetrust-banner-sdk', 'onetrust-consent-sdk', 'ot-sdk-container', 'optanon-alert-box-wrapper'],
+  },
+  'Cookiebot': {
+    scripts: ['consent.cookiebot.com', 'consentcdn.cookiebot.com'],
+    elements: ['CybotCookiebotDialog', 'cookiebot-widget'],
+  },
+  'TrustArc': {
+    scripts: ['consent.trustarc.com', 'consent-pref.trustarc.com', 'trustarc.mgr.consensu.org'],
+    elements: ['truste-consent-track', 'trustarc-banner', 'consent_blackbar'],
+  },
+  'Quantcast': {
+    scripts: ['quantcast.mgr.consensu.org', 'cmp.quantcast.com', 'choice.us.quantcast.com'],
+    elements: ['qc-cmp2-container', 'qc-cmp-ui-container'],
+  },
+  'Didomi': {
+    scripts: ['sdk.privacy-center.org', 'didomi.io/sdk'],
+    elements: ['didomi-host', 'didomi-popup', 'didomi-notice'],
+  },
+  'Osano': {
+    scripts: ['cmp.osano.com', 'cookie-consent.osano.com'],
+    elements: ['osano-cm-window', 'osano-cm-dialog'],
+  },
+  'CookieYes': {
+    scripts: ['cdn-cookieyes.com', 'app.cookieyes.com'],
+    elements: ['cky-consent-container', 'cky-banner'],
+  },
+  'Termly': {
+    scripts: ['app.termly.io/embed', 'termly.io/resources/templates'],
+    elements: ['termly-code-snippet-support', 't-consentPrompt'],
+  },
+  'iubenda': {
+    scripts: ['cdn.iubenda.com/cs/', 'iubenda_cs.js'],
+    elements: ['iubenda-cs-banner', 'iubenda-iframe'],
+  },
+  'Sourcepoint': {
+    scripts: ['sourcepoint.mgr.consensu.org', 'cdn.privacy-mgmt.com'],
+    elements: ['sp_message_container', 'sp-message'],
+  },
+  'Usercentrics': {
+    scripts: ['app.usercentrics.eu', 'usercentrics.eu/bundle'],
+    elements: ['uc-banner', 'usercentrics-root'],
+  },
+  'Ketch': {
+    scripts: ['global.ketchcdn.com', 'ketch-tag.js'],
+    elements: ['ketch-consent', 'lanyard-root'],
+  },
+  'CookiePro': {
+    scripts: ['cookiepro.com/consent', 'cookie-cdn.cookiepro.com'],
+    elements: ['onetrust-banner-sdk'], // CookiePro uses OneTrust SDK
+  },
+  'Admiral': {
+    scripts: ['admiralcdn.com'],
+    elements: ['admiral-cmp'],
+  },
+  'Complianz': {
+    scripts: ['complianz-gdpr', 'cmplz-cookiebanner'],
+    elements: ['cmplz-cookiebanner', 'cmplz-consent-modal'],
+  },
+  'Cookie Script': {
+    scripts: ['cdn.cookie-script.com', 'cookie-script.com/s/'],
+    elements: ['cookie-script-banner'],
+  },
+  'Axeptio': {
+    scripts: ['static.axept.io', 'axeptio/sdk'],
+    elements: ['axeptio_overlay', 'axeptio_btn'],
+  },
+  'CookieFirst': {
+    scripts: ['consent.cookiefirst.com'],
+    elements: ['cookiefirst-root'],
+  },
+  'Klaro': {
+    scripts: ['kiprotect.com/klaro', 'klaro.js', 'klaro.min.js'],
+    elements: ['klaro', 'cookie-modal'],
+  },
+  'Civic UK': {
+    scripts: ['cc.cdn.civiccomputing.com'],
+    elements: ['ccc-notify', 'civic-cookie-control'],
+  },
+  'LiveRamp': {
+    scripts: ['launchpad.privacymanager.io', 'ats.rlcdn.com'],
+    elements: ['_lp_banner'],
+  },
+  'Securiti': {
+    scripts: ['cdn.securiti.ai', 'consent.securiti.ai'],
+    elements: ['securiti-consent-banner'],
+  },
+  'Transcend': {
+    scripts: ['cdn.transcend.io', 'transcend.io/cm'],
+    elements: ['transcend-consent-manager'],
+  },
 };
 
 const consentSignalPatterns = {
@@ -194,16 +259,37 @@ async function scanUrl(url, scanType = 'quick') {
     const $ = cheerio.load(html);
     const fullContent = html.toLowerCase();
 
-    // Quick Scan detections (always run)
-    // Detect CMPs
-    for (const [cmp, patterns] of Object.entries(cookieBannerPatterns)) {
-      for (const pattern of patterns) {
-        if (fullContent.includes(pattern.toLowerCase())) {
-          if (!result.cmp.includes(cmp)) {
-            result.cmp.push(cmp);
+    // Strict CMP detection - check for actual consent banner scripts and elements
+    for (const [cmpName, patterns] of Object.entries(cookieBannerPatterns)) {
+      let detected = false;
+
+      // Check for CMP-specific script sources
+      if (patterns.scripts) {
+        for (const scriptPattern of patterns.scripts) {
+          // Look in script src attributes specifically
+          const scriptFound = $(`script[src*="${scriptPattern}"]`).length > 0;
+          // Also check inline scripts for SDK initialization
+          const inlineFound = fullContent.includes(scriptPattern.toLowerCase());
+          if (scriptFound || inlineFound) {
+            detected = true;
+            break;
           }
-          break;
         }
+      }
+
+      // Check for CMP-specific DOM elements (IDs and classes)
+      if (!detected && patterns.elements) {
+        for (const elementPattern of patterns.elements) {
+          const elementFound = $(`#${elementPattern}, .${elementPattern}, [id*="${elementPattern}"], [class*="${elementPattern}"]`).length > 0;
+          if (elementFound) {
+            detected = true;
+            break;
+          }
+        }
+      }
+
+      if (detected && !result.cmp.includes(cmpName)) {
+        result.cmp.push(cmpName);
       }
     }
 
