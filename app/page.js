@@ -1,0 +1,377 @@
+'use client';
+
+import { useState, useCallback } from 'react';
+
+export default function Home() {
+  const [urls, setUrls] = useState('');
+  const [results, setResults] = useState([]);
+  const [isScanning, setIsScanning] = useState(false);
+  const [progress, setProgress] = useState({ current: 0, total: 0, currentUrl: '' });
+  const [filter, setFilter] = useState('all');
+  const [searchTerm, setSearchTerm] = useState('');
+
+  const stats = {
+    success: results.filter(r => r.status === 'Success').length,
+    errors: results.filter(r => r.status !== 'Success').length,
+    total: results.length,
+  };
+
+  const summary = results.reduce((acc, r) => {
+    r.cmp?.forEach(c => {
+      acc.cmp[c] = (acc.cmp[c] || 0) + 1;
+    });
+    r.tagManager?.forEach(t => {
+      acc.tagManager[t] = (acc.tagManager[t] || 0) + 1;
+    });
+    r.platform?.forEach(p => {
+      acc.platform[p] = (acc.platform[p] || 0) + 1;
+    });
+    return acc;
+  }, { cmp: {}, tagManager: {}, platform: {} });
+
+  const handleScan = async () => {
+    const urlList = urls.split('\n').map(u => u.trim()).filter(Boolean);
+    if (urlList.length === 0) return;
+
+    setIsScanning(true);
+    setResults([]);
+    setProgress({ current: 0, total: urlList.length, currentUrl: '' });
+
+    const allResults = [];
+    const batchSize = 5;
+
+    for (let i = 0; i < urlList.length; i += batchSize) {
+      const batch = urlList.slice(i, i + batchSize);
+      setProgress({ current: i, total: urlList.length, currentUrl: batch[0] });
+
+      try {
+        const response = await fetch('/api/scan', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ urls: batch }),
+        });
+
+        const data = await response.json();
+        if (data.results) {
+          allResults.push(...data.results);
+          setResults([...allResults]);
+        }
+      } catch (error) {
+        batch.forEach(url => {
+          allResults.push({
+            url,
+            status: 'Not Scannable',
+            error: error.message,
+            cmp: [],
+            consentSignals: [],
+            tagManager: [],
+            thirdPartyCookies: [],
+            platform: [],
+          });
+        });
+        setResults([...allResults]);
+      }
+    }
+
+    setProgress({ current: urlList.length, total: urlList.length, currentUrl: '' });
+    setIsScanning(false);
+  };
+
+  const handleClear = () => {
+    setUrls('');
+    setResults([]);
+    setProgress({ current: 0, total: 0, currentUrl: '' });
+  };
+
+  const handleExport = () => {
+    if (results.length === 0) return;
+
+    const headers = ['URL', 'Status', 'CMP', 'Consent Signals', 'Tag Manager', 'Third-Party Cookies', 'Platform'];
+    const rows = results.map(r => [
+      r.url,
+      r.status,
+      r.cmp?.join('; ') || '',
+      r.consentSignals?.join('; ') || '',
+      r.tagManager?.join('; ') || '',
+      r.thirdPartyCookies?.join('; ') || '',
+      r.platform?.join('; ') || '',
+    ]);
+
+    const csv = [headers.join(','), ...rows.map(r => r.map(c => `"${c}"`).join(','))].join('\n');
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `privacy-scout-results-${new Date().toISOString().split('T')[0]}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const filteredResults = results.filter(r => {
+    if (filter !== 'all' && r.status !== filter) return false;
+    if (searchTerm && !r.url.toLowerCase().includes(searchTerm.toLowerCase())) return false;
+    return true;
+  });
+
+  const urlCount = urls.split('\n').filter(u => u.trim()).length;
+
+  return (
+    <div className="app-container">
+      {/* Header */}
+      <header className="header">
+        <svg className="app-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="gradient1" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" style={{ stopColor: '#ec4899' }} />
+              <stop offset="50%" style={{ stopColor: '#8b5cf6' }} />
+              <stop offset="100%" style={{ stopColor: '#3b82f6' }} />
+            </linearGradient>
+          </defs>
+          <circle cx="7" cy="13" r="5" fill="url(#gradient1)" />
+          <circle cx="7" cy="13" r="3" fill="white" fillOpacity="0.3" />
+          <circle cx="17" cy="13" r="5" fill="url(#gradient1)" />
+          <circle cx="17" cy="13" r="3" fill="white" fillOpacity="0.3" />
+          <rect x="10" y="11" width="4" height="4" rx="1" fill="url(#gradient1)" />
+          <path d="M4 8 L6 10" stroke="url(#gradient1)" strokeWidth="2" strokeLinecap="round" />
+          <path d="M20 8 L18 10" stroke="url(#gradient1)" strokeWidth="2" strokeLinecap="round" />
+        </svg>
+        <span className="app-title">Privacy Scout</span>
+        <span className="app-subtitle">Sales Discovery Tool</span>
+      </header>
+
+      {/* Main Content */}
+      <div className="main-content">
+        {/* Sidebar */}
+        <aside className="sidebar">
+          <div className="sidebar-section">
+            <h3>Scan Statistics</h3>
+            <div className="stat-cards">
+              <div className="stat-card">
+                <div className="stat-icon success">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+                    <polyline points="22 4 12 14.01 9 11.01" />
+                  </svg>
+                </div>
+                <div className="stat-info">
+                  <span className="stat-value">{stats.success}</span>
+                  <span className="stat-label">Successful</span>
+                </div>
+              </div>
+              <div className="stat-card">
+                <div className="stat-icon error">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <circle cx="12" cy="12" r="10" />
+                    <line x1="15" y1="9" x2="9" y2="15" />
+                    <line x1="9" y1="9" x2="15" y2="15" />
+                  </svg>
+                </div>
+                <div className="stat-info">
+                  <span className="stat-value">{stats.errors}</span>
+                  <span className="stat-label">Not Scannable</span>
+                </div>
+              </div>
+              <div className="stat-card">
+                <div className="stat-icon total">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" />
+                  </svg>
+                </div>
+                <div className="stat-info">
+                  <span className="stat-value">{stats.total}</span>
+                  <span className="stat-label">Total URLs</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="sidebar-section">
+            <h3>Detection Summary</h3>
+            <div className="summary-list">
+              {Object.keys(summary.cmp).length > 0 || Object.keys(summary.tagManager).length > 0 ? (
+                <>
+                  {Object.entries(summary.cmp).slice(0, 5).map(([name, count]) => (
+                    <div key={name} className="summary-item">
+                      <span className="name">{name}</span>
+                      <span className="count">{count}</span>
+                    </div>
+                  ))}
+                  {Object.entries(summary.tagManager).slice(0, 5).map(([name, count]) => (
+                    <div key={name} className="summary-item">
+                      <span className="name">{name}</span>
+                      <span className="count">{count}</span>
+                    </div>
+                  ))}
+                </>
+              ) : (
+                <div className="summary-empty">
+                  <p>Scan URLs to see detection summary</p>
+                </div>
+              )}
+            </div>
+          </div>
+        </aside>
+
+        {/* Main Panel */}
+        <main className="main-panel">
+          {/* Input Section */}
+          <div className="input-section">
+            <div className="section-header">
+              <h2>URL Scanner</h2>
+              <p>Paste your URLs below (one per line) and click scan to analyze cookie banners, tag managers, and platforms.</p>
+            </div>
+
+            <div className="textarea-container">
+              <textarea
+                value={urls}
+                onChange={(e) => setUrls(e.target.value)}
+                placeholder={`https://example.com\nhttps://another-site.com\nhttps://third-site.com\n\nPaste your URLs here, one per line...`}
+              />
+              <div className="textarea-actions">
+                <span className="url-count">{urlCount} URLs</span>
+                <button className="btn-clear" onClick={handleClear} title="Clear all">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <polyline points="3 6 5 6 21 6" />
+                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+
+            <div className="action-buttons">
+              <button className="btn btn-primary" onClick={handleScan} disabled={isScanning || urlCount === 0}>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <circle cx="11" cy="11" r="8" />
+                  <path d="m21 21-4.35-4.35" />
+                </svg>
+                {isScanning ? 'Scanning...' : 'Quick Scan'}
+              </button>
+              <button className="btn btn-export" onClick={handleExport} disabled={results.length === 0}>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                  <polyline points="7 10 12 15 17 10" />
+                  <line x1="12" y1="15" x2="12" y2="3" />
+                </svg>
+                Export CSV
+              </button>
+            </div>
+          </div>
+
+          {/* Progress Section */}
+          {isScanning && (
+            <div className="progress-section">
+              <div className="progress-header">
+                <div className="progress-info">
+                  <span className="progress-text">Scanning...</span>
+                  <span className="progress-detail">{progress.current} of {progress.total} URLs</span>
+                </div>
+                <span className="progress-percentage">{Math.round((progress.current / progress.total) * 100)}%</span>
+              </div>
+              <div className="progress-bar">
+                <div className="progress-fill" style={{ width: `${(progress.current / progress.total) * 100}%` }} />
+              </div>
+              {progress.currentUrl && <div className="current-url">{progress.currentUrl}</div>}
+            </div>
+          )}
+
+          {/* Results Section */}
+          <div className="results-section">
+            <div className="results-header">
+              <h2>Quick Scan Results</h2>
+              <div className="results-filters">
+                <input
+                  type="text"
+                  className="search-input"
+                  placeholder="Filter results..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                />
+                <select
+                  className="filter-select"
+                  value={filter}
+                  onChange={(e) => setFilter(e.target.value)}
+                >
+                  <option value="all">All Status</option>
+                  <option value="Success">Success</option>
+                  <option value="Not Scannable">Not Scannable</option>
+                </select>
+              </div>
+            </div>
+
+            <div className="results-table-container">
+              <table className="results-table">
+                <thead>
+                  <tr>
+                    <th>URL</th>
+                    <th>Status</th>
+                    <th>CMP</th>
+                    <th>Consent Signals</th>
+                    <th>Tag Manager</th>
+                    <th>Third-Party Cookies</th>
+                    <th>Platform</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredResults.length > 0 ? (
+                    filteredResults.map((result, index) => (
+                      <tr key={index}>
+                        <td className="url-cell" title={result.url}>{result.url}</td>
+                        <td>
+                          <span className={`status-badge ${result.status === 'Success' ? 'success' : 'error'}`}>
+                            {result.status}
+                          </span>
+                        </td>
+                        <td>
+                          {result.cmp?.map((c, i) => (
+                            <span key={i} className="tag cmp">{c}</span>
+                          ))}
+                        </td>
+                        <td>
+                          {result.consentSignals?.map((s, i) => (
+                            <span key={i} className="tag consent">{s}</span>
+                          ))}
+                        </td>
+                        <td>
+                          {result.tagManager?.map((t, i) => (
+                            <span key={i} className="tag tm">{t}</span>
+                          ))}
+                        </td>
+                        <td>
+                          {result.thirdPartyCookies?.slice(0, 3).map((c, i) => (
+                            <span key={i} className="tag cookie">{c}</span>
+                          ))}
+                          {result.thirdPartyCookies?.length > 3 && (
+                            <span className="tag cookie">+{result.thirdPartyCookies.length - 3} more</span>
+                          )}
+                        </td>
+                        <td>
+                          {result.platform?.map((p, i) => (
+                            <span key={i} className="tag platform">{p}</span>
+                          ))}
+                        </td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr className="empty-state">
+                      <td colSpan="7">
+                        <div className="empty-message">
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                            <path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2" />
+                            <rect x="9" y="3" width="6" height="4" rx="2" />
+                            <path d="M9 14l2 2 4-4" />
+                          </svg>
+                          <p>No results yet</p>
+                          <span>Enter URLs above and click "Quick Scan" to begin</span>
+                        </div>
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </main>
+      </div>
+    </div>
+  );
+}
