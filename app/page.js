@@ -1,11 +1,13 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState } from 'react';
 
 export default function Home() {
   const [urls, setUrls] = useState('');
   const [results, setResults] = useState([]);
   const [isScanning, setIsScanning] = useState(false);
+  const [scanType, setScanType] = useState('quick');
+  const [activeTab, setActiveTab] = useState('quick');
   const [progress, setProgress] = useState({ current: 0, total: 0, currentUrl: '' });
   const [filter, setFilter] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
@@ -26,13 +28,24 @@ export default function Home() {
     r.platform?.forEach(p => {
       acc.platform[p] = (acc.platform[p] || 0) + 1;
     });
+    r.dsar?.forEach(d => {
+      acc.dsar[d] = (acc.dsar[d] || 0) + 1;
+    });
+    r.trustCenter?.forEach(tc => {
+      acc.trustCenter[tc] = (acc.trustCenter[tc] || 0) + 1;
+    });
+    r.privacyPolicyGenerator?.forEach(ppg => {
+      acc.privacyPolicyGenerator[ppg] = (acc.privacyPolicyGenerator[ppg] || 0) + 1;
+    });
     return acc;
-  }, { cmp: {}, tagManager: {}, platform: {} });
+  }, { cmp: {}, tagManager: {}, platform: {}, dsar: {}, trustCenter: {}, privacyPolicyGenerator: {} });
 
-  const handleScan = async () => {
+  const handleScan = async (type) => {
     const urlList = urls.split('\n').map(u => u.trim()).filter(Boolean);
     if (urlList.length === 0) return;
 
+    setScanType(type);
+    setActiveTab(type);
     setIsScanning(true);
     setResults([]);
     setProgress({ current: 0, total: urlList.length, currentUrl: '' });
@@ -48,7 +61,7 @@ export default function Home() {
         const response = await fetch('/api/scan', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ urls: batch }),
+          body: JSON.stringify({ urls: batch, scanType: type }),
         });
 
         const data = await response.json();
@@ -67,6 +80,9 @@ export default function Home() {
             tagManager: [],
             thirdPartyCookies: [],
             platform: [],
+            dsar: [],
+            trustCenter: [],
+            privacyPolicyGenerator: [],
           });
         });
         setResults([...allResults]);
@@ -86,23 +102,38 @@ export default function Home() {
   const handleExport = () => {
     if (results.length === 0) return;
 
-    const headers = ['URL', 'Status', 'CMP', 'Consent Signals', 'Tag Manager', 'Third-Party Cookies', 'Platform'];
-    const rows = results.map(r => [
-      r.url,
-      r.status,
-      r.cmp?.join('; ') || '',
-      r.consentSignals?.join('; ') || '',
-      r.tagManager?.join('; ') || '',
-      r.thirdPartyCookies?.join('; ') || '',
-      r.platform?.join('; ') || '',
-    ]);
+    const headers = activeTab === 'quick'
+      ? ['URL', 'Status', 'CMP', 'Consent Signals', 'Tag Manager', 'Third-Party Cookies', 'Platform']
+      : ['URL', 'Status', 'CMP', 'Consent Signals', 'Tag Manager', 'Third-Party Cookies', 'Platform', 'DSAR', 'Trust Center', 'Privacy Policy Generator'];
+
+    const rows = results.map(r => {
+      const baseRow = [
+        r.url,
+        r.status,
+        r.cmp?.join('; ') || '',
+        r.consentSignals?.join('; ') || '',
+        r.tagManager?.join('; ') || '',
+        r.thirdPartyCookies?.join('; ') || '',
+        r.platform?.join('; ') || '',
+      ];
+
+      if (activeTab === 'deep') {
+        baseRow.push(
+          r.dsar?.join('; ') || '',
+          r.trustCenter?.join('; ') || '',
+          r.privacyPolicyGenerator?.join('; ') || ''
+        );
+      }
+
+      return baseRow;
+    });
 
     const csv = [headers.join(','), ...rows.map(r => r.map(c => `"${c}"`).join(','))].join('\n');
     const blob = new Blob([csv], { type: 'text/csv' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `privacy-scout-results-${new Date().toISOString().split('T')[0]}.csv`;
+    a.download = `privacy-scout-${activeTab}-results-${new Date().toISOString().split('T')[0]}.csv`;
     a.click();
     URL.revokeObjectURL(url);
   };
@@ -188,16 +219,28 @@ export default function Home() {
           <div className="sidebar-section">
             <h3>Detection Summary</h3>
             <div className="summary-list">
-              {Object.keys(summary.cmp).length > 0 || Object.keys(summary.tagManager).length > 0 ? (
+              {Object.keys(summary.cmp).length > 0 || Object.keys(summary.tagManager).length > 0 || Object.keys(summary.dsar).length > 0 ? (
                 <>
-                  {Object.entries(summary.cmp).slice(0, 5).map(([name, count]) => (
-                    <div key={name} className="summary-item">
+                  {Object.entries(summary.cmp).slice(0, 3).map(([name, count]) => (
+                    <div key={`cmp-${name}`} className="summary-item">
                       <span className="name">{name}</span>
                       <span className="count">{count}</span>
                     </div>
                   ))}
-                  {Object.entries(summary.tagManager).slice(0, 5).map(([name, count]) => (
-                    <div key={name} className="summary-item">
+                  {Object.entries(summary.tagManager).slice(0, 3).map(([name, count]) => (
+                    <div key={`tm-${name}`} className="summary-item">
+                      <span className="name">{name}</span>
+                      <span className="count">{count}</span>
+                    </div>
+                  ))}
+                  {Object.entries(summary.dsar).slice(0, 2).map(([name, count]) => (
+                    <div key={`dsar-${name}`} className="summary-item">
+                      <span className="name">{name}</span>
+                      <span className="count">{count}</span>
+                    </div>
+                  ))}
+                  {Object.entries(summary.trustCenter).slice(0, 2).map(([name, count]) => (
+                    <div key={`tc-${name}`} className="summary-item">
                       <span className="name">{name}</span>
                       <span className="count">{count}</span>
                     </div>
@@ -218,7 +261,7 @@ export default function Home() {
           <div className="input-section">
             <div className="section-header">
               <h2>URL Scanner</h2>
-              <p>Paste your URLs below (one per line) and click scan to analyze cookie banners, tag managers, and platforms.</p>
+              <p>Paste your URLs below (one per line) and select a scan type.</p>
             </div>
 
             <div className="textarea-container">
@@ -239,12 +282,18 @@ export default function Home() {
             </div>
 
             <div className="action-buttons">
-              <button className="btn btn-primary" onClick={handleScan} disabled={isScanning || urlCount === 0}>
+              <button className="btn btn-primary" onClick={() => handleScan('quick')} disabled={isScanning || urlCount === 0}>
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <circle cx="11" cy="11" r="8" />
                   <path d="m21 21-4.35-4.35" />
                 </svg>
-                {isScanning ? 'Scanning...' : 'Quick Scan'}
+                {isScanning && scanType === 'quick' ? 'Scanning...' : 'Quick Scan'}
+              </button>
+              <button className="btn btn-deep" onClick={() => handleScan('deep')} disabled={isScanning || urlCount === 0}>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M12 2v4m0 12v4M4.93 4.93l2.83 2.83m8.48 8.48l2.83 2.83M2 12h4m12 0h4M4.93 19.07l2.83-2.83m8.48-8.48l2.83-2.83" />
+                </svg>
+                {isScanning && scanType === 'deep' ? 'Scanning...' : 'Deep Scan'}
               </button>
               <button className="btn btn-export" onClick={handleExport} disabled={results.length === 0}>
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -262,7 +311,7 @@ export default function Home() {
             <div className="progress-section">
               <div className="progress-header">
                 <div className="progress-info">
-                  <span className="progress-text">Scanning...</span>
+                  <span className="progress-text">{scanType === 'quick' ? 'Quick' : 'Deep'} Scanning...</span>
                   <span className="progress-detail">{progress.current} of {progress.total} URLs</span>
                 </div>
                 <span className="progress-percentage">{Math.round((progress.current / progress.total) * 100)}%</span>
@@ -277,7 +326,20 @@ export default function Home() {
           {/* Results Section */}
           <div className="results-section">
             <div className="results-header">
-              <h2>Quick Scan Results</h2>
+              <div className="tabs">
+                <button
+                  className={`tab ${activeTab === 'quick' ? 'active' : ''}`}
+                  onClick={() => setActiveTab('quick')}
+                >
+                  Quick Scan
+                </button>
+                <button
+                  className={`tab ${activeTab === 'deep' ? 'active' : ''}`}
+                  onClick={() => setActiveTab('deep')}
+                >
+                  Deep Scan
+                </button>
+              </div>
               <div className="results-filters">
                 <input
                   type="text"
@@ -299,75 +361,142 @@ export default function Home() {
             </div>
 
             <div className="results-table-container">
-              <table className="results-table">
-                <thead>
-                  <tr>
-                    <th>URL</th>
-                    <th>Status</th>
-                    <th>CMP</th>
-                    <th>Consent Signals</th>
-                    <th>Tag Manager</th>
-                    <th>Third-Party Cookies</th>
-                    <th>Platform</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filteredResults.length > 0 ? (
-                    filteredResults.map((result, index) => (
-                      <tr key={index}>
-                        <td className="url-cell" title={result.url}>{result.url}</td>
-                        <td>
-                          <span className={`status-badge ${result.status === 'Success' ? 'success' : 'error'}`}>
-                            {result.status}
-                          </span>
-                        </td>
-                        <td>
-                          {result.cmp?.map((c, i) => (
-                            <span key={i} className="tag cmp">{c}</span>
-                          ))}
-                        </td>
-                        <td>
-                          {result.consentSignals?.map((s, i) => (
-                            <span key={i} className="tag consent">{s}</span>
-                          ))}
-                        </td>
-                        <td>
-                          {result.tagManager?.map((t, i) => (
-                            <span key={i} className="tag tm">{t}</span>
-                          ))}
-                        </td>
-                        <td>
-                          {result.thirdPartyCookies?.slice(0, 3).map((c, i) => (
-                            <span key={i} className="tag cookie">{c}</span>
-                          ))}
-                          {result.thirdPartyCookies?.length > 3 && (
-                            <span className="tag cookie">+{result.thirdPartyCookies.length - 3} more</span>
-                          )}
-                        </td>
-                        <td>
-                          {result.platform?.map((p, i) => (
-                            <span key={i} className="tag platform">{p}</span>
-                          ))}
+              {activeTab === 'quick' ? (
+                <table className="results-table">
+                  <thead>
+                    <tr>
+                      <th>URL</th>
+                      <th>Status</th>
+                      <th>CMP</th>
+                      <th>Consent Signals</th>
+                      <th>Tag Manager</th>
+                      <th>Third-Party Cookies</th>
+                      <th>Platform</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredResults.length > 0 ? (
+                      filteredResults.map((result, index) => (
+                        <tr key={index}>
+                          <td className="url-cell" title={result.url}>{result.url}</td>
+                          <td>
+                            <span className={`status-badge ${result.status === 'Success' ? 'success' : 'error'}`}>
+                              {result.status}
+                            </span>
+                          </td>
+                          <td>
+                            {result.cmp?.map((c, i) => (
+                              <span key={i} className="tag cmp">{c}</span>
+                            ))}
+                          </td>
+                          <td>
+                            {result.consentSignals?.map((s, i) => (
+                              <span key={i} className="tag consent">{s}</span>
+                            ))}
+                          </td>
+                          <td>
+                            {result.tagManager?.map((t, i) => (
+                              <span key={i} className="tag tm">{t}</span>
+                            ))}
+                          </td>
+                          <td>
+                            {result.thirdPartyCookies?.slice(0, 3).map((c, i) => (
+                              <span key={i} className="tag cookie">{c}</span>
+                            ))}
+                            {result.thirdPartyCookies?.length > 3 && (
+                              <span className="tag cookie">+{result.thirdPartyCookies.length - 3} more</span>
+                            )}
+                          </td>
+                          <td>
+                            {result.platform?.map((p, i) => (
+                              <span key={i} className="tag platform">{p}</span>
+                            ))}
+                          </td>
+                        </tr>
+                      ))
+                    ) : (
+                      <tr className="empty-state">
+                        <td colSpan="7">
+                          <div className="empty-message">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                              <path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2" />
+                              <rect x="9" y="3" width="6" height="4" rx="2" />
+                              <path d="M9 14l2 2 4-4" />
+                            </svg>
+                            <p>No results yet</p>
+                            <span>Enter URLs above and click "Quick Scan" to detect CMPs, Tag Managers, and Platforms</span>
+                          </div>
                         </td>
                       </tr>
-                    ))
-                  ) : (
-                    <tr className="empty-state">
-                      <td colSpan="7">
-                        <div className="empty-message">
-                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-                            <path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2" />
-                            <rect x="9" y="3" width="6" height="4" rx="2" />
-                            <path d="M9 14l2 2 4-4" />
-                          </svg>
-                          <p>No results yet</p>
-                          <span>Enter URLs above and click "Quick Scan" to begin</span>
-                        </div>
-                      </td>
+                    )}
+                  </tbody>
+                </table>
+              ) : (
+                <table className="results-table">
+                  <thead>
+                    <tr>
+                      <th>URL</th>
+                      <th>Status</th>
+                      <th>DSAR Platform</th>
+                      <th>Trust Center</th>
+                      <th>Privacy Policy Generator</th>
+                      <th>CMP</th>
+                      <th>Tag Manager</th>
                     </tr>
-                  )}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody>
+                    {filteredResults.length > 0 ? (
+                      filteredResults.map((result, index) => (
+                        <tr key={index}>
+                          <td className="url-cell" title={result.url}>{result.url}</td>
+                          <td>
+                            <span className={`status-badge ${result.status === 'Success' ? 'success' : 'error'}`}>
+                              {result.status}
+                            </span>
+                          </td>
+                          <td>
+                            {result.dsar?.map((d, i) => (
+                              <span key={i} className="tag dsar">{d}</span>
+                            ))}
+                          </td>
+                          <td>
+                            {result.trustCenter?.map((tc, i) => (
+                              <span key={i} className="tag trust">{tc}</span>
+                            ))}
+                          </td>
+                          <td>
+                            {result.privacyPolicyGenerator?.map((ppg, i) => (
+                              <span key={i} className="tag ppg">{ppg}</span>
+                            ))}
+                          </td>
+                          <td>
+                            {result.cmp?.map((c, i) => (
+                              <span key={i} className="tag cmp">{c}</span>
+                            ))}
+                          </td>
+                          <td>
+                            {result.tagManager?.map((t, i) => (
+                              <span key={i} className="tag tm">{t}</span>
+                            ))}
+                          </td>
+                        </tr>
+                      ))
+                    ) : (
+                      <tr className="empty-state">
+                        <td colSpan="7">
+                          <div className="empty-message">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                              <path d="M12 2v4m0 12v4M4.93 4.93l2.83 2.83m8.48 8.48l2.83 2.83M2 12h4m12 0h4M4.93 19.07l2.83-2.83m8.48-8.48l2.83-2.83" />
+                            </svg>
+                            <p>No deep scan results yet</p>
+                            <span>Click "Deep Scan" to detect DSAR platforms, Trust Centers, and Privacy Policy Generators</span>
+                          </div>
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              )}
             </div>
           </div>
         </main>

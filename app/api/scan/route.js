@@ -96,7 +96,58 @@ const platformPatterns = {
   'Akamai': ['akamai', 'akamaized'],
 };
 
-async function scanUrl(url) {
+// Deep Scan patterns
+const dsarPatterns = {
+  'OneTrust DSAR': ['onetrust.com/webform', 'privacyportal.onetrust.com', 'privacyportal-cdn.onetrust.com'],
+  'TrustArc DSAR': ['trustarc.com/consumer', 'submit-irm.trustarc.com', 'preferences.truste.com'],
+  'BigID': ['bigid.com', 'portal.bigid.'],
+  'DataGrail': ['datagrail.io', 'dsr.datagrail'],
+  'Transcend': ['transcend.io', 'privacy.transcend'],
+  'Securiti': ['securiti.ai', 'privaci.ai'],
+  'WireWheel': ['wirewheel.io'],
+  'Ketch DSAR': ['ketch.com/request', 'rights.ketch'],
+  'Osano DSAR': ['osano.com/dsar', 'dsar.osano'],
+  'Mine': ['saymine.com', 'dsr.saymine'],
+  'Enzuzo': ['enzuzo.com'],
+  'Ethyca': ['ethyca.com', 'fides.'],
+  'Clarip': ['clarip.com'],
+  'Didomi DSAR': ['didomi.io/request', 'preference.didomi'],
+  'Sourcepoint DSAR': ['sourcepoint.com/dsar'],
+};
+
+const trustCenterPatterns = {
+  'OneTrust Trust Center': ['onetrust.com/trust', 'trust.onetrust'],
+  'Conveyor': ['conveyor.com', 'trust.'],
+  'Vanta Trust Center': ['vanta.com/trust', 'trust-center.vanta'],
+  'Drata': ['drata.com', 'trust.drata'],
+  'Secureframe': ['secureframe.com', 'trust.secureframe'],
+  'SafeBase': ['safebase.io', 'security.safebase'],
+  'Tugboat Logic': ['tugboatlogic.com'],
+  'Whistic': ['whistic.com'],
+  'SecurityScorecard': ['securityscorecard.com', 'trust.securityscorecard'],
+  'Trust Center by Salesforce': ['trust.salesforce.com'],
+  'Cisco Trust Center': ['trustportal.cisco.com'],
+  'AWS Trust Center': ['aws.amazon.com/compliance'],
+  'Google Trust Center': ['cloud.google.com/security'],
+  'Microsoft Trust Center': ['microsoft.com/trust-center'],
+};
+
+const privacyPolicyPatterns = {
+  'Termly Generator': ['termly.io/products/privacy-policy', 'app.termly.io'],
+  'iubenda Generator': ['iubenda.com/privacy-policy', 'iubenda.com/en/privacy'],
+  'PrivacyPolicies.com': ['privacypolicies.com'],
+  'FreePrivacyPolicy': ['freeprivacypolicy.com'],
+  'GetTerms': ['getterms.io'],
+  'Enzuzo Generator': ['enzuzo.com/privacy'],
+  'Osano Generator': ['osano.com/privacy-policy-generator'],
+  'CookieYes Generator': ['cookieyes.com/privacy-policy-generator'],
+  'TermsFeed': ['termsfeed.com'],
+  'Nolo': ['nolo.com/legal-encyclopedia/privacy-policy'],
+  'Shopify Generator': ['shopify.com/tools/policy-generator'],
+  'Privacy Policy Online': ['privacypolicyonline.com'],
+};
+
+async function scanUrl(url, scanType = 'quick') {
   const result = {
     url,
     status: 'Success',
@@ -105,6 +156,10 @@ async function scanUrl(url) {
     tagManager: [],
     thirdPartyCookies: [],
     platform: [],
+    // Deep scan fields
+    dsar: [],
+    trustCenter: [],
+    privacyPolicyGenerator: [],
     error: null,
   };
 
@@ -139,6 +194,7 @@ async function scanUrl(url) {
     const $ = cheerio.load(html);
     const fullContent = html.toLowerCase();
 
+    // Quick Scan detections (always run)
     // Detect CMPs
     for (const [cmp, patterns] of Object.entries(cookieBannerPatterns)) {
       for (const pattern of patterns) {
@@ -208,6 +264,45 @@ async function scanUrl(url) {
 
     result.thirdPartyCookies = Array.from(thirdPartyDomains).slice(0, 10);
 
+    // Deep Scan detections (only if scanType is 'deep')
+    if (scanType === 'deep') {
+      // Detect DSAR platforms
+      for (const [dsar, patterns] of Object.entries(dsarPatterns)) {
+        for (const pattern of patterns) {
+          if (fullContent.includes(pattern.toLowerCase())) {
+            if (!result.dsar.includes(dsar)) {
+              result.dsar.push(dsar);
+            }
+            break;
+          }
+        }
+      }
+
+      // Detect Trust Centers
+      for (const [tc, patterns] of Object.entries(trustCenterPatterns)) {
+        for (const pattern of patterns) {
+          if (fullContent.includes(pattern.toLowerCase())) {
+            if (!result.trustCenter.includes(tc)) {
+              result.trustCenter.push(tc);
+            }
+            break;
+          }
+        }
+      }
+
+      // Detect Privacy Policy Generators
+      for (const [ppg, patterns] of Object.entries(privacyPolicyPatterns)) {
+        for (const pattern of patterns) {
+          if (fullContent.includes(pattern.toLowerCase())) {
+            if (!result.privacyPolicyGenerator.includes(ppg)) {
+              result.privacyPolicyGenerator.push(ppg);
+            }
+            break;
+          }
+        }
+      }
+    }
+
   } catch (error) {
     result.status = 'Not Scannable';
     result.error = error.name === 'AbortError' ? 'Timeout' : error.message;
@@ -218,7 +313,7 @@ async function scanUrl(url) {
 
 export async function POST(request) {
   try {
-    const { urls } = await request.json();
+    const { urls, scanType = 'quick' } = await request.json();
 
     if (!urls || !Array.isArray(urls) || urls.length === 0) {
       return Response.json({ error: 'No URLs provided' }, { status: 400 });
@@ -230,7 +325,7 @@ export async function POST(request) {
 
     for (const url of urlsToScan) {
       if (url.trim()) {
-        const result = await scanUrl(url.trim());
+        const result = await scanUrl(url.trim(), scanType);
         results.push(result);
       }
     }
