@@ -194,6 +194,43 @@ body {
   margin-bottom: 20px;
 }
 
+/* Quick List Dropdown */
+.quick-list-container {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.quick-list-container label {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+
+.quick-list-select {
+  flex: 1;
+  max-width: 350px;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 10px 14px;
+  font-size: 14px;
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: border-color 0.2s;
+}
+
+.quick-list-select:focus {
+  outline: none;
+  border-color: var(--accent-purple);
+}
+
+.quick-list-select:hover {
+  border-color: var(--accent-purple);
+}
+
 .textarea-container {
   position: relative;
   margin-bottom: 20px;

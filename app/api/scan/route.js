@@ -29,8 +29,10 @@ const cookieBannerPatterns = {
     elements: ['osano-cm-window', 'osano-cm-dialog'],
   },
   'CookieYes': {
-    scripts: ['cdn-cookieyes.com', 'app.cookieyes.com'],
-    elements: ['cky-consent-container', 'cky-banner'],
+    scripts: ['cdn-cookieyes.com', 'app.cookieyes.com', 'cdn.cookieyes.com', 'cookieyes.com'],
+    elements: ['cky-consent-container', 'cky-banner', 'cky-consent', 'cky-btn', 'cky-notice'],
+    // Case-insensitive patterns to check
+    caseInsensitive: ['cookieyes', 'cky-'],
   },
   'Termly': {
     scripts: ['app.termly.io/embed', 'termly.io/resources/templates'],
@@ -45,8 +47,10 @@ const cookieBannerPatterns = {
     elements: ['sp_message_container', 'sp-message'],
   },
   'Usercentrics': {
-    scripts: ['app.usercentrics.eu', 'usercentrics.eu/bundle'],
-    elements: ['uc-banner', 'usercentrics-root'],
+    scripts: ['app.usercentrics.eu', 'usercentrics.eu/bundle', 'usercentrics.eu'],
+    elements: ['uc-banner', 'usercentrics-root', 'uc-embedding-container'],
+    // Case-insensitive patterns for Usercentrics (UC- prefix often used)
+    caseInsensitive: ['usercentrics', 'uc-'],
   },
   'Ketch': {
     scripts: ['global.ketchcdn.com', 'ketch-tag.js'],
@@ -95,6 +99,16 @@ const cookieBannerPatterns = {
   'Transcend': {
     scripts: ['cdn.transcend.io', 'transcend.io/cm'],
     elements: ['transcend-consent-manager'],
+  },
+  'HubSpot Cookie Banner': {
+    scripts: ['js.hs-banner.com', 'js.hscollectedforms.net/collectedforms', 'hs-banner'],
+    elements: ['hs-banner-cookie-settings', 'hs-eu-cookie-confirmation', 'hs-cookie-notification'],
+    caseInsensitive: ['hs-banner', 'hscookiebanner'],
+  },
+  'monday.com Cookie': {
+    // monday.com uses a custom cookie banner
+    elements: ['cookie-settings', 'cookie-banner', 'cookies-banner'],
+    caseInsensitive: ['cookie-settings', 'cookies-policy-banner'],
   },
 };
 
@@ -240,9 +254,17 @@ async function scanUrl(url, scanType = 'quick') {
     const response = await fetch(url, {
       signal: controller.signal,
       headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
-        'Accept-Language': 'en-US,en;q=0.5',
+        'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8',
+        'Accept-Language': 'en-US,en;q=0.9',
+        'Accept-Encoding': 'gzip, deflate, br',
+        'Cache-Control': 'no-cache',
+        'Pragma': 'no-cache',
+        'Sec-Fetch-Dest': 'document',
+        'Sec-Fetch-Mode': 'navigate',
+        'Sec-Fetch-Site': 'none',
+        'Sec-Fetch-User': '?1',
+        'Upgrade-Insecure-Requests': '1',
       },
       redirect: 'follow',
     });
@@ -282,6 +304,16 @@ async function scanUrl(url, scanType = 'quick') {
         for (const elementPattern of patterns.elements) {
           const elementFound = $(`#${elementPattern}, .${elementPattern}, [id*="${elementPattern}"], [class*="${elementPattern}"]`).length > 0;
           if (elementFound) {
+            detected = true;
+            break;
+          }
+        }
+      }
+
+      // Check for case-insensitive patterns (for CMPs like Usercentrics with UC- prefix)
+      if (!detected && patterns.caseInsensitive) {
+        for (const pattern of patterns.caseInsensitive) {
+          if (fullContent.includes(pattern.toLowerCase())) {
             detected = true;
             break;
           }

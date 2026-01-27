@@ -16,6 +16,85 @@ function getCmClass(vendor) {
   return 'cm-default';
 }
 
+// Quick Lists - predefined URL lists for common scan targets
+const quickLists = {
+  'Fortune 50': [
+    'walmart.com', 'amazon.com', 'exxonmobil.com', 'apple.com', 'unitedhealth.com',
+    'mckesson.com', 'cvs.com', 'amerisourcebergen.com', 'chevron.com', 'costco.com',
+    'cigna.com', 'marathon.com', 'phillips66.com', 'valero.com', 'ford.com',
+    'gm.com', 'att.com', 'verizon.com', 'kroger.com', 'walgreens.com',
+    'jpmorgan.com', 'bankofamerica.com', 'fanniemae.com', 'alphabet.com', 'microsoft.com',
+    'homedepot.com', 'wellsfargo.com', 'citigroup.com', 'cardinal.com', 'humana.com',
+    'centene.com', 'target.com', 'meta.com', 'lowes.com', 'albertsons.com',
+    'pepsico.com', 'disney.com', 'johnson.com', 'procter.com', 'freddiemac.com',
+    'intel.com', 'lockheed.com', 'ibm.com', 'boeing.com', 'comcast.com',
+    'ups.com', 'caterpillar.com', 'nvidia.com', 'merck.com', 'cisco.com'
+  ],
+  'Top Healthcare': [
+    'unitedhealth.com', 'mckesson.com', 'cvs.com', 'cigna.com', 'elevancehealth.com',
+    'cardinalhealth.com', 'humana.com', 'centene.com', 'hcahealthcare.com', 'kaiserpermanente.org',
+    'pfizer.com', 'abbvie.com', 'johnson.com', 'merck.com', 'bristol-myers.com',
+    'amgen.com', 'gilead.com', 'eli-lilly.com', 'astrazeneca.com', 'novartis.com',
+    'optum.com', 'aetna.com', 'blueshieldca.com', 'anthem.com', 'molina.com'
+  ],
+  'Top Finance': [
+    'jpmorgan.com', 'bankofamerica.com', 'wellsfargo.com', 'citigroup.com', 'goldmansachs.com',
+    'morganstanley.com', 'blackrock.com', 'schwab.com', 'fidelity.com', 'vanguard.com',
+    'americanexpress.com', 'visa.com', 'mastercard.com', 'paypal.com', 'stripe.com',
+    'capitalone.com', 'usbank.com', 'pnc.com', 'truist.com', 'tdbank.com',
+    'ally.com', 'discover.com', 'synchrony.com', 'sofi.com', 'robinhood.com'
+  ],
+  'Top Retail': [
+    'walmart.com', 'amazon.com', 'costco.com', 'kroger.com', 'walgreens.com',
+    'homedepot.com', 'target.com', 'lowes.com', 'bestbuy.com', 'macys.com',
+    'nordstrom.com', 'kohls.com', 'tjx.com', 'ross.com', 'gap.com',
+    'nike.com', 'adidas.com', 'lululemon.com', 'sephora.com', 'ulta.com',
+    'wayfair.com', 'etsy.com', 'ebay.com', 'chewy.com', 'zappos.com'
+  ],
+  'Big Tech': [
+    'apple.com', 'microsoft.com', 'alphabet.com', 'google.com', 'amazon.com',
+    'meta.com', 'facebook.com', 'netflix.com', 'nvidia.com', 'adobe.com',
+    'salesforce.com', 'oracle.com', 'ibm.com', 'intel.com', 'cisco.com',
+    'qualcomm.com', 'amd.com', 'servicenow.com', 'workday.com', 'intuit.com',
+    'uber.com', 'airbnb.com', 'snap.com', 'twitter.com', 'linkedin.com'
+  ],
+  'Top EU SaaS': [
+    'sap.com', 'spotify.com', 'klarna.com', 'adyen.com', 'uipath.com',
+    'contentful.com', 'personio.com', 'celonis.com', 'messagebird.com', 'mollie.com',
+    'typeform.com', 'docplanner.com', 'n26.com', 'revolut.com', 'wise.com',
+    'deliveryhero.com', 'deliveroo.com', 'glovo.com', 'bolt.eu', 'gorillas.io',
+    'pipedrive.com', 'teamviewer.com', 'trivago.com', 'booking.com', 'skyscanner.com'
+  ],
+  'Top India SaaS': [
+    'zoho.com', 'freshworks.com', 'postman.com', 'browserstack.com', 'chargebee.com',
+    'clevertap.com', 'druva.com', 'icertis.com', 'innovaccer.com', 'mindtickle.com',
+    'leadsquared.com', 'darwinbox.com', 'razorpay.com', 'moengage.com', 'webengage.com',
+    'haptik.ai', 'hashedin.com', 'wingify.com', 'kayako.com', 'helpshift.com',
+    'sprinklr.com', 'uniphore.com', 'yellowmessenger.com', 'leena.ai', 'skit.ai'
+  ],
+  'Top AMER SaaS': [
+    'salesforce.com', 'microsoft.com', 'servicenow.com', 'workday.com', 'adobe.com',
+    'hubspot.com', 'zendesk.com', 'slack.com', 'zoom.com', 'dropbox.com',
+    'atlassian.com', 'twilio.com', 'okta.com', 'snowflake.com', 'datadog.com',
+    'splunk.com', 'paloaltonetworks.com', 'crowdstrike.com', 'zscaler.com', 'fortinet.com',
+    'monday.com', 'asana.com', 'notion.so', 'figma.com', 'canva.com'
+  ],
+  'Data Brokers': [
+    'acxiom.com', 'experian.com', 'equifax.com', 'transunion.com', 'lexisnexis.com',
+    'oracle.com/data-cloud', 'nielsen.com', 'liveramp.com', 'epsilon.com', 'corelogic.com',
+    'infogroup.com', 'datalogix.com', 'exactdata.com', 'spokeo.com', 'beenverified.com',
+    'whitepages.com', 'intelius.com', 'peekyou.com', 'pipl.com', 'fullcontact.com',
+    'clearbit.com', 'zoominfo.com', 'apollo.io', 'lusha.com', 'leadiq.com'
+  ],
+  'GSIs & Consulting': [
+    'accenture.com', 'deloitte.com', 'pwc.com', 'ey.com', 'kpmg.com',
+    'mckinsey.com', 'bcg.com', 'bain.com', 'capgemini.com', 'cognizant.com',
+    'infosys.com', 'wipro.com', 'tcs.com', 'hcl.com', 'tech-mahindra.com',
+    'ibm.com/consulting', 'dxc.com', 'atos.net', 'nttdata.com', 'fujitsu.com',
+    'boozallen.com', 'slalom.com', 'thoughtworks.com', 'epam.com', 'globant.com'
+  ],
+};
+
 export default function Home() {
   const [urls, setUrls] = useState('');
   const [results, setResults] = useState([]);
@@ -111,6 +190,12 @@ export default function Home() {
     setUrls('');
     setResults([]);
     setProgress({ current: 0, total: 0, currentUrl: '' });
+  };
+
+  const handleQuickList = (listName) => {
+    if (listName && quickLists[listName]) {
+      setUrls(quickLists[listName].join('\n'));
+    }
   };
 
   const handleExport = () => {
@@ -276,6 +361,26 @@ export default function Home() {
             <div className="section-header">
               <h2>URL Scanner</h2>
               <p>Paste your URLs below (one per line) and select a scan type.</p>
+            </div>
+
+            <div className="quick-list-container">
+              <label htmlFor="quick-list">Quick Lists:</label>
+              <select
+                id="quick-list"
+                className="quick-list-select"
+                onChange={(e) => {
+                  handleQuickList(e.target.value);
+                  e.target.value = '';
+                }}
+                defaultValue=""
+              >
+                <option value="" disabled>Select a predefined list...</option>
+                {Object.keys(quickLists).map((listName) => (
+                  <option key={listName} value={listName}>
+                    {listName} ({quickLists[listName].length} URLs)
+                  </option>
+                ))}
+              </select>
             </div>
 
             <div className="textarea-container">
