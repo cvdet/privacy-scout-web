@@ -5,8 +5,8 @@ import * as cheerio from 'cheerio';
 const cookieBannerPatterns = {
   'OneTrust': {
     // Must find OneTrust-specific SDK scripts or banner elements
-    scripts: ['cdn.cookielaw.org', 'onetrust.com/consent', 'otSDKStub.js', 'otBannerSdk.js'],
-    elements: ['onetrust-banner-sdk', 'onetrust-consent-sdk', 'ot-sdk-container', 'optanon-alert-box-wrapper'],
+    scripts: ['cdn.cookielaw.org', 'onetrust.com/consent', 'otSDKStub.js', 'otBannerSdk.js', 'optanon.js', 'otAutoBlock'],
+    elements: ['onetrust-banner-sdk', 'onetrust-consent-sdk', 'ot-sdk-container', 'optanon-alert-box-wrapper', 'ot-sdk-show-settings', 'ot-sdk-btn', 'onetrust-pc-sdk', 'optanon-cookie-policy'],
   },
   'Cookiebot': {
     scripts: ['consent.cookiebot.com', 'consentcdn.cookiebot.com'],

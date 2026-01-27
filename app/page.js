@@ -399,32 +399,54 @@ export default function Home() {
                             </span>
                           </td>
                           <td>
-                            {result.cmp?.map((c, i) => (
-                              <span key={i} className={`tag ${getCmClass(c)}`}>{c}</span>
-                            ))}
-                          </td>
-                          <td>
-                            {result.consentSignals?.map((s, i) => (
-                              <span key={i} className="tag consent">{s}</span>
-                            ))}
-                          </td>
-                          <td>
-                            {result.tagManager?.map((t, i) => (
-                              <span key={i} className="tag tm">{t}</span>
-                            ))}
-                          </td>
-                          <td>
-                            {result.thirdPartyCookies?.slice(0, 3).map((c, i) => (
-                              <span key={i} className="tag cookie">{c}</span>
-                            ))}
-                            {result.thirdPartyCookies?.length > 3 && (
-                              <span className="tag cookie">+{result.thirdPartyCookies.length - 3} more</span>
+                            {result.cmp?.length > 0 ? (
+                              result.cmp.map((c, i) => (
+                                <span key={i} className={`tag ${getCmClass(c)}`}>{c}</span>
+                              ))
+                            ) : (
+                              <span className="tag cm-default">Unknown</span>
                             )}
                           </td>
                           <td>
-                            {result.platform?.map((p, i) => (
-                              <span key={i} className="tag platform">{p}</span>
-                            ))}
+                            {result.consentSignals?.length > 0 ? (
+                              result.consentSignals.map((s, i) => (
+                                <span key={i} className="tag consent">{s}</span>
+                              ))
+                            ) : (
+                              <span className="tag consent">Unknown</span>
+                            )}
+                          </td>
+                          <td>
+                            {result.tagManager?.length > 0 ? (
+                              result.tagManager.map((t, i) => (
+                                <span key={i} className="tag tm">{t}</span>
+                              ))
+                            ) : (
+                              <span className="tag tm">Unknown</span>
+                            )}
+                          </td>
+                          <td>
+                            {result.thirdPartyCookies?.length > 0 ? (
+                              <>
+                                {result.thirdPartyCookies.slice(0, 3).map((c, i) => (
+                                  <span key={i} className="tag cookie">{c}</span>
+                                ))}
+                                {result.thirdPartyCookies.length > 3 && (
+                                  <span className="tag cookie">+{result.thirdPartyCookies.length - 3} more</span>
+                                )}
+                              </>
+                            ) : (
+                              <span className="tag cookie">Unknown</span>
+                            )}
+                          </td>
+                          <td>
+                            {result.platform?.length > 0 ? (
+                              result.platform.map((p, i) => (
+                                <span key={i} className="tag platform">{p}</span>
+                              ))
+                            ) : (
+                              <span className="tag platform">Unknown</span>
+                            )}
                           </td>
                         </tr>
                       ))
@@ -469,29 +491,49 @@ export default function Home() {
                             </span>
                           </td>
                           <td>
-                            {result.dsar?.map((d, i) => (
-                              <span key={i} className="tag dsar">{d}</span>
-                            ))}
+                            {result.dsar?.length > 0 ? (
+                              result.dsar.map((d, i) => (
+                                <span key={i} className="tag dsar">{d}</span>
+                              ))
+                            ) : (
+                              <span className="tag dsar">Unknown</span>
+                            )}
                           </td>
                           <td>
-                            {result.trustCenter?.map((tc, i) => (
-                              <span key={i} className="tag trust">{tc}</span>
-                            ))}
+                            {result.trustCenter?.length > 0 ? (
+                              result.trustCenter.map((tc, i) => (
+                                <span key={i} className="tag trust">{tc}</span>
+                              ))
+                            ) : (
+                              <span className="tag trust">Unknown</span>
+                            )}
                           </td>
                           <td>
-                            {result.privacyPolicyGenerator?.map((ppg, i) => (
-                              <span key={i} className="tag ppg">{ppg}</span>
-                            ))}
+                            {result.privacyPolicyGenerator?.length > 0 ? (
+                              result.privacyPolicyGenerator.map((ppg, i) => (
+                                <span key={i} className="tag ppg">{ppg}</span>
+                              ))
+                            ) : (
+                              <span className="tag ppg">Unknown</span>
+                            )}
                           </td>
                           <td>
-                            {result.cmp?.map((c, i) => (
-                              <span key={i} className={`tag ${getCmClass(c)}`}>{c}</span>
-                            ))}
+                            {result.cmp?.length > 0 ? (
+                              result.cmp.map((c, i) => (
+                                <span key={i} className={`tag ${getCmClass(c)}`}>{c}</span>
+                              ))
+                            ) : (
+                              <span className="tag cm-default">Unknown</span>
+                            )}
                           </td>
                           <td>
-                            {result.tagManager?.map((t, i) => (
-                              <span key={i} className="tag tm">{t}</span>
-                            ))}
+                            {result.tagManager?.length > 0 ? (
+                              result.tagManager.map((t, i) => (
+                                <span key={i} className="tag tm">{t}</span>
+                              ))
+                            ) : (
+                              <span className="tag tm">Unknown</span>
+                            )}
                           </td>
                         </tr>
                       ))
