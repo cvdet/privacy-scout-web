@@ -401,6 +401,25 @@ async function scanUrl(url, scanType = 'quick') {
       }
     }
 
+    // Inference-based CMP detection for dynamically-loaded banners
+    // HubSpot banner (hs-banner.com) is loaded dynamically by the HubSpot tracking script
+    // If we detect HubSpot Tracking but no CMP, infer HubSpot CM
+    if (result.thirdPartyVendors.includes('HubSpot Tracking') && result.cmp.length === 0) {
+      // Check for HubSpot cookie consent indicators in the HTML
+      const hubspotConsentIndicators = [
+        'fs-cc-categories',  // HubSpot uses this attribute for cookie categories
+        '__hs_cookie_cat_pref',
+        'hs-cookie',
+        '_hsp',  // HubSpot privacy cookie
+      ];
+      for (const indicator of hubspotConsentIndicators) {
+        if (fullContent.includes(indicator.toLowerCase())) {
+          result.cmp.push('HubSpot (Inferred)');
+          break;
+        }
+      }
+    }
+
     // Deep Scan detections (only if scanType is 'deep')
     if (scanType === 'deep') {
       // Detect DSAR platforms
