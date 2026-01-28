@@ -1,6 +1,8 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
+
+const APP_PASSWORD = 'trustarc1257!';
 
 // Helper function to get CM vendor-specific CSS class
 function getCmClass(vendor) {
@@ -96,6 +98,9 @@ const quickLists = {
 };
 
 export default function Home() {
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [password, setPassword] = useState('');
+  const [passwordError, setPasswordError] = useState('');
   const [urls, setUrls] = useState('');
   const [results, setResults] = useState([]);
   const [isScanning, setIsScanning] = useState(false);
@@ -105,6 +110,25 @@ export default function Home() {
   const [filter, setFilter] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
   const stopScanRef = useRef(false);
+
+  // Check for saved auth on mount
+  useEffect(() => {
+    const savedAuth = sessionStorage.getItem('privacyScoutAuth');
+    if (savedAuth === 'true') {
+      setIsAuthenticated(true);
+    }
+  }, []);
+
+  const handleLogin = (e) => {
+    e.preventDefault();
+    if (password === APP_PASSWORD) {
+      setIsAuthenticated(true);
+      setPasswordError('');
+      sessionStorage.setItem('privacyScoutAuth', 'true');
+    } else {
+      setPasswordError('Incorrect password');
+    }
+  };
 
   const stats = {
     success: results.filter(r => r.status === 'Success').length,
@@ -255,6 +279,41 @@ export default function Home() {
   });
 
   const urlCount = urls.split('\n').filter(u => u.trim()).length;
+
+  // Show login screen if not authenticated
+  if (!isAuthenticated) {
+    return (
+      <div className="login-container">
+        <div className="login-box">
+          <div className="login-header">
+            <svg className="login-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <circle cx="11" cy="11" r="8" />
+              <path d="m21 21-4.35-4.35" />
+            </svg>
+            <h1>Privacy Scout</h1>
+            <p>CMP Discovery Tool</p>
+          </div>
+          <form onSubmit={handleLogin} className="login-form">
+            <div className="input-group">
+              <label htmlFor="password">Password</label>
+              <input
+                type="password"
+                id="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="Enter password"
+                autoFocus
+              />
+            </div>
+            {passwordError && <div className="login-error">{passwordError}</div>}
+            <button type="submit" className="btn btn-primary login-btn">
+              Sign In
+            </button>
+          </form>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="app-container">

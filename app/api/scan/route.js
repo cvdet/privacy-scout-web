@@ -1,15 +1,21 @@
 import * as cheerio from 'cheerio';
 
-// Strict CMP detection - ONLY detect via script sources (most reliable)
-// Removed generic element patterns that cause false positives
+// CMP detection patterns - using CDN domains and specific element IDs/classes
+// Scripts array: checked in script src AND inline content (for GTM-loaded scripts)
+// Elements array: checked as exact ID matches
+// Classes array: checked as class attribute matches (for OneTrust settings buttons etc)
 const cookieBannerPatterns = {
   'OneTrust': {
-    scripts: ['cdn.cookielaw.org', 'onetrust.com/consent', 'otSDKStub.js', 'otBannerSdk.js', 'optanon.js', 'otAutoBlock'],
+    // CDN domains that are unique to OneTrust
+    scripts: ['cdn.cookielaw.org', 'optanon.blob.core.windows.net', 'onetrust.com/consent'],
     elements: ['onetrust-banner-sdk', 'onetrust-consent-sdk', 'optanon-alert-box-wrapper'],
+    // OneTrust-specific classes (settings buttons, etc)
+    classes: ['ot-sdk-show-settings', 'optanon-toggle-display'],
   },
   'Cookiebot': {
     scripts: ['consent.cookiebot.com', 'consentcdn.cookiebot.com'],
-    elements: ['CybotCookiebotDialog'],
+    elements: ['CybotCookiebotDialog', 'CybotCookiebotDialogBody'],
+    classes: ['CybotCookiebotDialogActive'],
   },
   'TrustArc': {
     scripts: ['consent.trustarc.com', 'consent-pref.trustarc.com', 'trustarc.mgr.consensu.org'],
@@ -20,70 +26,65 @@ const cookieBannerPatterns = {
     elements: ['qc-cmp2-container'],
   },
   'Didomi': {
-    scripts: ['sdk.privacy-center.org', 'didomi.io/sdk'],
+    scripts: ['sdk.privacy-center.org', 'cdn.didomi.io'],
     elements: ['didomi-host', 'didomi-popup'],
+    classes: ['didomi-consent-popup-backdrop', 'didomi-popup-open'],
   },
   'Osano': {
     scripts: ['cmp.osano.com', 'cookie-consent.osano.com'],
     elements: ['osano-cm-window'],
   },
   'CookieYes': {
-    // ONLY script-based detection - no generic patterns
-    scripts: ['cdn-cookieyes.com', 'app.cookieyes.com'],
+    // Only CDN domain - very specific
+    scripts: ['cdn-cookieyes.com'],
+    elements: ['cky-consent'],
+    classes: ['cky-consent-container', 'cky-btn-accept'],
   },
   'Termly': {
-    scripts: ['app.termly.io/embed', 'termly.io/resources/templates'],
+    scripts: ['app.termly.io'],
     elements: ['termly-code-snippet-support'],
   },
   'iubenda': {
-    scripts: ['cdn.iubenda.com/cs/', 'iubenda_cs.js'],
+    scripts: ['cdn.iubenda.com'],
     elements: ['iubenda-cs-banner'],
+    classes: ['iubenda-tp-btn', 'iubenda-cs-preferences-link'],
   },
   'Sourcepoint': {
-    scripts: ['sourcepoint.mgr.consensu.org', 'cdn.privacy-mgmt.com'],
+    scripts: ['cdn.privacy-mgmt.com', 'sourcepoint.mgr.consensu.org'],
     elements: ['sp_message_container'],
   },
   'Usercentrics': {
-    scripts: ['app.usercentrics.eu', 'usercentrics.eu/bundle'],
+    scripts: ['app.usercentrics.eu'],
     elements: ['usercentrics-root'],
   },
   'Ketch': {
-    scripts: ['global.ketchcdn.com', 'ketch-tag.js'],
+    scripts: ['global.ketchcdn.com'],
     elements: ['lanyard-root'],
   },
   'CookiePro': {
-    scripts: ['cookiepro.com/consent', 'cookie-cdn.cookiepro.com'],
-  },
-  'Admiral': {
-    scripts: ['admiralcdn.com'],
+    scripts: ['cookie-cdn.cookiepro.com', 'cookiepro.blob.core.windows.net'],
   },
   'Complianz': {
-    scripts: ['complianz-gdpr', 'cmplz-cookiebanner'],
+    scripts: ['complianz-gdpr'],
     elements: ['cmplz-cookiebanner'],
   },
   'Cookie Script': {
-    scripts: ['cdn.cookie-script.com', 'cookie-script.com/s/'],
+    scripts: ['cdn.cookie-script.com'],
   },
   'Axeptio': {
-    scripts: ['static.axept.io', 'axeptio/sdk'],
+    scripts: ['static.axept.io'],
   },
   'CookieFirst': {
     scripts: ['consent.cookiefirst.com'],
   },
-  'Klaro': {
-    scripts: ['kiprotect.com/klaro', 'klaro.min.js'],
-  },
   'Civic UK': {
     scripts: ['cc.cdn.civiccomputing.com'],
-  },
-  'LiveRamp': {
-    scripts: ['launchpad.privacymanager.io'],
   },
   'Securiti': {
     scripts: ['cdn.securiti.ai', 'consent.securiti.ai'],
   },
   'Transcend': {
-    scripts: ['cdn.transcend.io', 'transcend.io/cm'],
+    scripts: ['cdn.transcend.io'],
   },
 };
 
@@ -260,24 +261,36 @@ async function scanUrl(url, scanType = 'quick') {
     for (const [cmpName, patterns] of Object.entries(cookieBannerPatterns)) {
       let detected = false;
 
-      // Check for CMP-specific script sources (PRIMARY detection method)
+      // Check for CMP-specific script sources
       if (patterns.scripts) {
         for (const scriptPattern of patterns.scripts) {
-          // Look in script src attributes specifically
+          // Check script src attributes
           const scriptFound = $(`script[src*="${scriptPattern}"]`).length > 0;
-          if (scriptFound) {
+          // Also check full HTML for CDN references (catches GTM-loaded scripts)
+          const inlineFound = fullContent.includes(scriptPattern.toLowerCase());
+          if (scriptFound || inlineFound) {
             detected = true;
             break;
           }
         }
       }
 
-      // Check for CMP-specific DOM elements (IDs only - more reliable than classes)
+      // Check for CMP-specific DOM elements (exact ID matches only)
       if (!detected && patterns.elements) {
         for (const elementPattern of patterns.elements) {
-          // Only check exact ID matches for reliability
           const elementFound = $(`#${elementPattern}`).length > 0;
           if (elementFound) {
+            detected = true;
+            break;
+          }
+        }
+      }
+
+      // Check for CMP-specific classes (e.g., OneTrust settings buttons)
+      if (!detected && patterns.classes) {
+        for (const classPattern of patterns.classes) {
+          const classFound = $(`.${classPattern}`).length > 0;
+          if (classFound) {
             detected = true;
             break;
           }
