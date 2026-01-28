@@ -1,114 +1,89 @@
 import * as cheerio from 'cheerio';
 
-// Strict CMP detection - only detect actual cookie banner/consent management scripts
-// These patterns look for specific script sources, SDK initializations, and banner elements
+// Strict CMP detection - ONLY detect via script sources (most reliable)
+// Removed generic element patterns that cause false positives
 const cookieBannerPatterns = {
   'OneTrust': {
-    // Must find OneTrust-specific SDK scripts or banner elements
     scripts: ['cdn.cookielaw.org', 'onetrust.com/consent', 'otSDKStub.js', 'otBannerSdk.js', 'optanon.js', 'otAutoBlock'],
-    elements: ['onetrust-banner-sdk', 'onetrust-consent-sdk', 'ot-sdk-container', 'optanon-alert-box-wrapper', 'ot-sdk-show-settings', 'ot-sdk-btn', 'onetrust-pc-sdk', 'optanon-cookie-policy'],
+    elements: ['onetrust-banner-sdk', 'onetrust-consent-sdk', 'optanon-alert-box-wrapper'],
   },
   'Cookiebot': {
     scripts: ['consent.cookiebot.com', 'consentcdn.cookiebot.com'],
-    elements: ['CybotCookiebotDialog', 'cookiebot-widget'],
+    elements: ['CybotCookiebotDialog'],
   },
   'TrustArc': {
     scripts: ['consent.trustarc.com', 'consent-pref.trustarc.com', 'trustarc.mgr.consensu.org'],
-    elements: ['truste-consent-track', 'trustarc-banner', 'consent_blackbar'],
+    elements: ['truste-consent-track', 'trustarc-banner'],
   },
   'Quantcast': {
     scripts: ['quantcast.mgr.consensu.org', 'cmp.quantcast.com', 'choice.us.quantcast.com'],
-    elements: ['qc-cmp2-container', 'qc-cmp-ui-container'],
+    elements: ['qc-cmp2-container'],
   },
   'Didomi': {
     scripts: ['sdk.privacy-center.org', 'didomi.io/sdk'],
-    elements: ['didomi-host', 'didomi-popup', 'didomi-notice'],
+    elements: ['didomi-host', 'didomi-popup'],
   },
   'Osano': {
     scripts: ['cmp.osano.com', 'cookie-consent.osano.com'],
-    elements: ['osano-cm-window', 'osano-cm-dialog'],
+    elements: ['osano-cm-window'],
   },
   'CookieYes': {
-    scripts: ['cdn-cookieyes.com', 'app.cookieyes.com', 'cdn.cookieyes.com', 'cookieyes.com'],
-    elements: ['cky-consent-container', 'cky-banner', 'cky-consent', 'cky-btn', 'cky-notice'],
-    // Case-insensitive patterns to check
-    caseInsensitive: ['cookieyes', 'cky-'],
+    // ONLY script-based detection - no generic patterns
+    scripts: ['cdn-cookieyes.com', 'app.cookieyes.com'],
   },
   'Termly': {
     scripts: ['app.termly.io/embed', 'termly.io/resources/templates'],
-    elements: ['termly-code-snippet-support', 't-consentPrompt'],
+    elements: ['termly-code-snippet-support'],
   },
   'iubenda': {
     scripts: ['cdn.iubenda.com/cs/', 'iubenda_cs.js'],
-    elements: ['iubenda-cs-banner', 'iubenda-iframe'],
+    elements: ['iubenda-cs-banner'],
   },
   'Sourcepoint': {
     scripts: ['sourcepoint.mgr.consensu.org', 'cdn.privacy-mgmt.com'],
-    elements: ['sp_message_container', 'sp-message'],
+    elements: ['sp_message_container'],
   },
   'Usercentrics': {
-    scripts: ['app.usercentrics.eu', 'usercentrics.eu/bundle', 'usercentrics.eu'],
-    elements: ['uc-banner', 'usercentrics-root', 'uc-embedding-container'],
-    // Case-insensitive patterns for Usercentrics (UC- prefix often used)
-    caseInsensitive: ['usercentrics', 'uc-'],
+    scripts: ['app.usercentrics.eu', 'usercentrics.eu/bundle'],
+    elements: ['usercentrics-root'],
   },
   'Ketch': {
     scripts: ['global.ketchcdn.com', 'ketch-tag.js'],
-    elements: ['ketch-consent', 'lanyard-root'],
+    elements: ['lanyard-root'],
   },
   'CookiePro': {
     scripts: ['cookiepro.com/consent', 'cookie-cdn.cookiepro.com'],
-    elements: ['onetrust-banner-sdk'], // CookiePro uses OneTrust SDK
   },
   'Admiral': {
     scripts: ['admiralcdn.com'],
-    elements: ['admiral-cmp'],
   },
   'Complianz': {
     scripts: ['complianz-gdpr', 'cmplz-cookiebanner'],
-    elements: ['cmplz-cookiebanner', 'cmplz-consent-modal'],
+    elements: ['cmplz-cookiebanner'],
   },
   'Cookie Script': {
     scripts: ['cdn.cookie-script.com', 'cookie-script.com/s/'],
-    elements: ['cookie-script-banner'],
   },
   'Axeptio': {
     scripts: ['static.axept.io', 'axeptio/sdk'],
-    elements: ['axeptio_overlay', 'axeptio_btn'],
   },
   'CookieFirst': {
     scripts: ['consent.cookiefirst.com'],
-    elements: ['cookiefirst-root'],
   },
   'Klaro': {
-    scripts: ['kiprotect.com/klaro', 'klaro.js', 'klaro.min.js'],
-    elements: ['klaro', 'cookie-modal'],
+    scripts: ['kiprotect.com/klaro', 'klaro.min.js'],
   },
   'Civic UK': {
     scripts: ['cc.cdn.civiccomputing.com'],
-    elements: ['ccc-notify', 'civic-cookie-control'],
   },
   'LiveRamp': {
-    scripts: ['launchpad.privacymanager.io', 'ats.rlcdn.com'],
-    elements: ['_lp_banner'],
+    scripts: ['launchpad.privacymanager.io'],
   },
   'Securiti': {
     scripts: ['cdn.securiti.ai', 'consent.securiti.ai'],
-    elements: ['securiti-consent-banner'],
   },
   'Transcend': {
     scripts: ['cdn.transcend.io', 'transcend.io/cm'],
-    elements: ['transcend-consent-manager'],
-  },
-  'HubSpot Cookie Banner': {
-    scripts: ['js.hs-banner.com', 'js.hscollectedforms.net/collectedforms', 'hs-banner'],
-    elements: ['hs-banner-cookie-settings', 'hs-eu-cookie-confirmation', 'hs-cookie-notification'],
-    caseInsensitive: ['hs-banner', 'hscookiebanner'],
-  },
-  'monday.com Cookie': {
-    // monday.com uses a custom cookie banner
-    elements: ['cookie-settings', 'cookie-banner', 'cookies-banner'],
-    caseInsensitive: ['cookie-settings', 'cookies-policy-banner'],
   },
 };
 
@@ -285,35 +260,24 @@ async function scanUrl(url, scanType = 'quick') {
     for (const [cmpName, patterns] of Object.entries(cookieBannerPatterns)) {
       let detected = false;
 
-      // Check for CMP-specific script sources
+      // Check for CMP-specific script sources (PRIMARY detection method)
       if (patterns.scripts) {
         for (const scriptPattern of patterns.scripts) {
           // Look in script src attributes specifically
           const scriptFound = $(`script[src*="${scriptPattern}"]`).length > 0;
-          // Also check inline scripts for SDK initialization
-          const inlineFound = fullContent.includes(scriptPattern.toLowerCase());
-          if (scriptFound || inlineFound) {
+          if (scriptFound) {
             detected = true;
             break;
           }
         }
       }
 
-      // Check for CMP-specific DOM elements (IDs and classes)
+      // Check for CMP-specific DOM elements (IDs only - more reliable than classes)
       if (!detected && patterns.elements) {
         for (const elementPattern of patterns.elements) {
-          const elementFound = $(`#${elementPattern}, .${elementPattern}, [id*="${elementPattern}"], [class*="${elementPattern}"]`).length > 0;
+          // Only check exact ID matches for reliability
+          const elementFound = $(`#${elementPattern}`).length > 0;
           if (elementFound) {
-            detected = true;
-            break;
-          }
-        }
-      }
-
-      // Check for case-insensitive patterns (for CMPs like Usercentrics with UC- prefix)
-      if (!detected && patterns.caseInsensitive) {
-        for (const pattern of patterns.caseInsensitive) {
-          if (fullContent.includes(pattern.toLowerCase())) {
             detected = true;
             break;
           }

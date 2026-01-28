@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 
 // Helper function to get CM vendor-specific CSS class
 function getCmClass(vendor) {
@@ -104,6 +104,7 @@ export default function Home() {
   const [progress, setProgress] = useState({ current: 0, total: 0, currentUrl: '' });
   const [filter, setFilter] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
+  const stopScanRef = useRef(false);
 
   const stats = {
     success: results.filter(r => r.status === 'Success').length,
@@ -142,11 +143,17 @@ export default function Home() {
     setIsScanning(true);
     setResults([]);
     setProgress({ current: 0, total: urlList.length, currentUrl: '' });
+    stopScanRef.current = false;
 
     const allResults = [];
     const batchSize = 5;
 
     for (let i = 0; i < urlList.length; i += batchSize) {
+      // Check if scan was stopped
+      if (stopScanRef.current) {
+        break;
+      }
+
       const batch = urlList.slice(i, i + batchSize);
       setProgress({ current: i, total: urlList.length, currentUrl: batch[0] });
 
@@ -182,8 +189,12 @@ export default function Home() {
       }
     }
 
-    setProgress({ current: urlList.length, total: urlList.length, currentUrl: '' });
+    setProgress({ current: stopScanRef.current ? allResults.length : urlList.length, total: urlList.length, currentUrl: '' });
     setIsScanning(false);
+  };
+
+  const handleStopScan = () => {
+    stopScanRef.current = true;
   };
 
   const handleClear = () => {
@@ -249,24 +260,12 @@ export default function Home() {
     <div className="app-container">
       {/* Header */}
       <header className="header">
-        <svg className="app-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <defs>
-            <linearGradient id="gradient1" x1="0%" y1="0%" x2="100%" y2="100%">
-              <stop offset="0%" style={{ stopColor: '#ec4899' }} />
-              <stop offset="50%" style={{ stopColor: '#8b5cf6' }} />
-              <stop offset="100%" style={{ stopColor: '#3b82f6' }} />
-            </linearGradient>
-          </defs>
-          <circle cx="7" cy="13" r="5" fill="url(#gradient1)" />
-          <circle cx="7" cy="13" r="3" fill="white" fillOpacity="0.3" />
-          <circle cx="17" cy="13" r="5" fill="url(#gradient1)" />
-          <circle cx="17" cy="13" r="3" fill="white" fillOpacity="0.3" />
-          <rect x="10" y="11" width="4" height="4" rx="1" fill="url(#gradient1)" />
-          <path d="M4 8 L6 10" stroke="url(#gradient1)" strokeWidth="2" strokeLinecap="round" />
-          <path d="M20 8 L18 10" stroke="url(#gradient1)" strokeWidth="2" strokeLinecap="round" />
+        <svg className="app-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <circle cx="11" cy="11" r="8" />
+          <path d="m21 21-4.35-4.35" />
         </svg>
         <span className="app-title">Privacy Scout</span>
-        <span className="app-subtitle">Sales Discovery Tool</span>
+        <span className="app-subtitle">CMP Discovery</span>
       </header>
 
       {/* Main Content */}
@@ -414,6 +413,14 @@ export default function Home() {
                 </svg>
                 {isScanning && scanType === 'deep' ? 'Scanning...' : 'Deep Scan'}
               </button>
+              {isScanning && (
+                <button className="btn btn-stop" onClick={handleStopScan}>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <rect x="6" y="6" width="12" height="12" rx="2" />
+                  </svg>
+                  Stop Scan
+                </button>
+              )}
               <button className="btn btn-export" onClick={handleExport} disabled={results.length === 0}>
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
@@ -509,7 +516,7 @@ export default function Home() {
                                 <span key={i} className={`tag ${getCmClass(c)}`}>{c}</span>
                               ))
                             ) : (
-                              <span className="tag cm-default">Unknown</span>
+                              <span className="tag unknown">Unknown</span>
                             )}
                           </td>
                           <td>
@@ -518,7 +525,7 @@ export default function Home() {
                                 <span key={i} className="tag consent">{s}</span>
                               ))
                             ) : (
-                              <span className="tag consent">Unknown</span>
+                              <span className="tag unknown">Unknown</span>
                             )}
                           </td>
                           <td>
@@ -527,7 +534,7 @@ export default function Home() {
                                 <span key={i} className="tag tm">{t}</span>
                               ))
                             ) : (
-                              <span className="tag tm">Unknown</span>
+                              <span className="tag unknown">Unknown</span>
                             )}
                           </td>
                           <td>
@@ -541,7 +548,7 @@ export default function Home() {
                                 )}
                               </>
                             ) : (
-                              <span className="tag cookie">Unknown</span>
+                              <span className="tag unknown">Unknown</span>
                             )}
                           </td>
                           <td>
@@ -550,7 +557,7 @@ export default function Home() {
                                 <span key={i} className="tag platform">{p}</span>
                               ))
                             ) : (
-                              <span className="tag platform">Unknown</span>
+                              <span className="tag unknown">Unknown</span>
                             )}
                           </td>
                         </tr>
@@ -601,7 +608,7 @@ export default function Home() {
                                 <span key={i} className="tag dsar">{d}</span>
                               ))
                             ) : (
-                              <span className="tag dsar">Unknown</span>
+                              <span className="tag unknown">Unknown</span>
                             )}
                           </td>
                           <td>
@@ -610,7 +617,7 @@ export default function Home() {
                                 <span key={i} className="tag trust">{tc}</span>
                               ))
                             ) : (
-                              <span className="tag trust">Unknown</span>
+                              <span className="tag unknown">Unknown</span>
                             )}
                           </td>
                           <td>
@@ -619,7 +626,7 @@ export default function Home() {
                                 <span key={i} className="tag ppg">{ppg}</span>
                               ))
                             ) : (
-                              <span className="tag ppg">Unknown</span>
+                              <span className="tag unknown">Unknown</span>
                             )}
                           </td>
                           <td>
@@ -628,7 +635,7 @@ export default function Home() {
                                 <span key={i} className={`tag ${getCmClass(c)}`}>{c}</span>
                               ))
                             ) : (
-                              <span className="tag cm-default">Unknown</span>
+                              <span className="tag unknown">Unknown</span>
                             )}
                           </td>
                           <td>
@@ -637,7 +644,7 @@ export default function Home() {
                                 <span key={i} className="tag tm">{t}</span>
                               ))
                             ) : (
-                              <span className="tag tm">Unknown</span>
+                              <span className="tag unknown">Unknown</span>
                             )}
                           </td>
                         </tr>
