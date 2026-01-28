@@ -86,6 +86,17 @@ const cookieBannerPatterns = {
   'Transcend': {
     scripts: ['cdn.transcend.io'],
   },
+  'Ensighten (Cheq)': {
+    scripts: ['nexus.ensighten.com', 'ensighten.com'],
+    // Also check for Ensighten consent cookies pattern
+    inlinePatterns: ['ENSIGHTEN_PRIVACY', 'checkEnsightenConsent'],
+  },
+  'HubSpot': {
+    scripts: ['js.hs-banner.com', 'js.hscollectedforms.net/collectedforms'],
+    elements: ['hs-banner-container', 'hs-cookie-banner'],
+    classes: ['hs-cookie-consent-banner'],
+    inlinePatterns: ['hs-banner.com', '__hs_cookie_cat_pref'],
+  },
 };
 
 const consentSignalPatterns = {
@@ -95,60 +106,82 @@ const consentSignalPatterns = {
   'Google Consent Mode': ['consent_mode', 'gtag.*consent', 'consentMode'],
 };
 
+// Tag Managers ONLY - systems that manage/deploy other tags
 const tagManagerPatterns = {
   'Google Tag Manager': ['googletagmanager.com/gtm.js', 'gtm.js', 'GTM-'],
+  'Adobe Launch': ['assets.adobedtm.com', 'launch-'],
+  'Tealium': ['tealium', 'utag.js', 'tealiumiq'],
+  'Segment': ['cdn.segment.com', 'segment.io'],
+  'Ensighten Manage': ['nexus.ensighten.com/manage'],
+  'Signal (BrightTag)': ['signal.co', 'brighttag'],
+  'Commanders Act': ['commandersact', 'tagcommander'],
+  'Piwik Tag Manager': ['piwik.pro/tag-manager'],
+};
+
+// Third-party data vendors - analytics, tracking, PII collectors
+const thirdPartyVendorPatterns = {
   'Google Analytics': ['google-analytics.com', 'gtag/js', 'ga.js', 'analytics.js'],
   'Google Analytics 4': ['gtag/js?id=G-'],
-  'Adobe Launch': ['assets.adobedtm.com', 'launch-', 'adobedtm'],
   'Adobe Analytics': ['omtrdc.net', 's_code', 'AppMeasurement'],
-  'Tealium': ['tealium', 'utag.js', 'tealiumiq'],
-  'Segment': ['segment.com', 'analytics.min.js', 'cdn.segment'],
+  'Facebook Pixel': ['connect.facebook.net', 'fbevents.js', 'fbq('],
+  'Meta Pixel': ['connect.facebook.net/signals'],
+  'LinkedIn Insight': ['snap.licdn.com', 'linkedin.com/px'],
+  'Twitter/X Pixel': ['static.ads-twitter.com', 'twq('],
+  'TikTok Pixel': ['analytics.tiktok.com', 'ttq.'],
+  'Pinterest Tag': ['pintrk', 's.pinimg.com'],
+  'Snapchat Pixel': ['sc-static.net', 'snaptr('],
+  'Microsoft Clarity': ['clarity.ms'],
+  'Hotjar': ['hotjar', 'static.hotjar.com'],
   'Heap': ['heap-', 'heapanalytics'],
   'Mixpanel': ['mixpanel', 'mxpnl'],
   'Amplitude': ['amplitude', 'cdn.amplitude'],
-  'Hotjar': ['hotjar', 'static.hotjar.com'],
-  'Crazy Egg': ['crazyegg'],
   'FullStory': ['fullstory', 'fs.js'],
+  'Crazy Egg': ['crazyegg'],
   'Lucky Orange': ['luckyorange'],
   'Pendo': ['pendo.io', 'pendo-'],
+  'Mouseflow': ['mouseflow.com'],
   'Matomo': ['matomo', 'piwik'],
   'Plausible': ['plausible.io'],
   'Fathom': ['usefathom.com'],
   'Snowplow': ['snowplow', 'sp.js'],
-  'Ensighten': ['ensighten', 'nexus.ensighten'],
-  'Signal (BrightTag)': ['signal.co', 'brighttag'],
-  'Commanders Act': ['commandersact', 'tagcommander'],
   'Piano Analytics': ['piano.io', 'at-internet'],
+  'HubSpot Tracking': ['js.hs-scripts.com', 'js.hubspot.com'],
+  'Salesforce DMP': ['krxd.net', 'cdn.krxd.net'],
+  'Oracle BlueKai': ['bluekai.com', 'bkrtx.com'],
+  'Criteo': ['criteo.com', 'criteo.net'],
+  'DoubleClick': ['doubleclick.net'],
+  'Google Ads': ['googleadservices.com', 'googlesyndication.com'],
+  'Bing Ads': ['bat.bing.com', 'clarity.ms'],
+  'Intercom': ['intercom.io', 'widget.intercom.io'],
+  'Drift': ['drift.com', 'js.driftt.com'],
+  'Zendesk': ['zendesk.com', 'zdassets.com'],
+  'LiveChat': ['livechatinc.com'],
+  'Optimizely': ['optimizely.com', 'cdn.optimizely'],
+  'VWO': ['visualwebsiteoptimizer.com', 'vwo.com'],
+  'AB Tasty': ['abtasty.com'],
+  'LaunchDarkly': ['launchdarkly.com'],
 };
 
+// Platform - website/CMS type only
 const platformPatterns = {
-  'WordPress': ['wp-content', 'wp-includes', 'wordpress'],
-  'Shopify': ['cdn.shopify', 'shopify.com', 'myshopify'],
-  'Wix': ['wix.com', 'wixstatic', 'parastorage'],
-  'Squarespace': ['squarespace', 'sqsp'],
-  'Webflow': ['webflow.com', 'webflow.io'],
-  'Drupal': ['drupal', '/sites/default/files'],
-  'Joomla': ['joomla', '/components/com_'],
-  'Magento': ['magento', 'mage/', 'static/frontend'],
-  'BigCommerce': ['bigcommerce', 'cdn11.bigcommerce'],
-  'PrestaShop': ['prestashop'],
-  'HubSpot': ['hubspot', 'hs-scripts', 'hscollectedforms'],
-  'Salesforce Commerce': ['demandware', 'salesforce'],
-  'WooCommerce': ['woocommerce', 'wc-'],
-  'Contentful': ['contentful', 'ctfassets'],
-  'Sanity': ['sanity.io'],
-  'Ghost': ['ghost.io', 'ghost-'],
-  'Next.js': ['_next/static', 'nextjs'],
-  'Gatsby': ['gatsby', '/static/'],
-  'React': ['react', 'reactDOM'],
-  'Vue': ['vue.js', 'vuejs'],
-  'Angular': ['angular', 'ng-'],
-  'Cloudflare': ['cloudflare', 'cf-ray'],
-  'Vercel': ['vercel', '.vercel.app'],
-  'Netlify': ['netlify', '.netlify.app'],
-  'AWS': ['amazonaws.com', 'cloudfront.net'],
-  'Azure': ['azure', 'azureedge.net', 'blob.core.windows.net'],
-  'Akamai': ['akamai', 'akamaized'],
+  'WordPress': ['wp-content', 'wp-includes'],
+  'Shopify': ['cdn.shopify', 'myshopify.com'],
+  'Wix': ['wixstatic.com', 'parastorage.com'],
+  'Squarespace': ['squarespace.com', 'sqsp.com'],
+  'Webflow': ['webflow.io', 'assets.website-files.com'],
+  'Drupal': ['/sites/default/files', 'drupal.js'],
+  'Joomla': ['/components/com_', '/media/jui/'],
+  'Magento': ['mage/cookies.js', 'static/frontend/Magento'],
+  'BigCommerce': ['cdn11.bigcommerce.com', 'bigcommerce.com/s-'],
+  'PrestaShop': ['prestashop', '/modules/ps_'],
+  'Salesforce Commerce': ['demandware.net', 'demandware.static'],
+  'WooCommerce': ['woocommerce', 'wc-add-to-cart'],
+  'HubSpot CMS': ['hs-sites.com', 'hubspotusercontent'],
+  'Ghost': ['ghost.io', 'ghost.org'],
+  'Contentful': ['ctfassets.net'],
+  'Sitecore': ['sitecore', '/-/media/'],
+  'Adobe Experience Manager': ['adobeaemcloud.com', '/content/dam/'],
+  'Kentico': ['kentico', '/cmspages/'],
 };
 
 // Deep Scan patterns
@@ -209,7 +242,7 @@ async function scanUrl(url, scanType = 'quick') {
     cmp: [],
     consentSignals: [],
     tagManager: [],
-    thirdPartyCookies: [],
+    thirdPartyVendors: [],
     platform: [],
     // Deep scan fields
     dsar: [],
@@ -297,6 +330,16 @@ async function scanUrl(url, scanType = 'quick') {
         }
       }
 
+      // Check for inline patterns (e.g., Ensighten consent functions)
+      if (!detected && patterns.inlinePatterns) {
+        for (const inlinePattern of patterns.inlinePatterns) {
+          if (fullContent.includes(inlinePattern.toLowerCase())) {
+            detected = true;
+            break;
+          }
+        }
+      }
+
       if (detected && !result.cmp.includes(cmpName)) {
         result.cmp.push(cmpName);
       }
@@ -327,6 +370,18 @@ async function scanUrl(url, scanType = 'quick') {
       }
     }
 
+    // Detect Third-Party Vendors (analytics, tracking, data collectors)
+    for (const [vendor, patterns] of Object.entries(thirdPartyVendorPatterns)) {
+      for (const pattern of patterns) {
+        if (fullContent.includes(pattern.toLowerCase())) {
+          if (!result.thirdPartyVendors.includes(vendor)) {
+            result.thirdPartyVendors.push(vendor);
+          }
+          break;
+        }
+      }
+    }
+
     // Detect Platforms
     for (const [platform, patterns] of Object.entries(platformPatterns)) {
       for (const pattern of patterns) {
@@ -338,26 +393,6 @@ async function scanUrl(url, scanType = 'quick') {
         }
       }
     }
-
-    // Detect third-party scripts (potential cookie setters)
-    const thirdPartyDomains = new Set();
-    const urlObj = new URL(url);
-    const mainDomain = urlObj.hostname.replace(/^www\./, '');
-
-    $('script[src], img[src], iframe[src], link[href]').each((_, el) => {
-      const src = $(el).attr('src') || $(el).attr('href');
-      if (src) {
-        try {
-          const srcUrl = new URL(src, url);
-          const srcDomain = srcUrl.hostname.replace(/^www\./, '');
-          if (srcDomain !== mainDomain && !srcDomain.endsWith('.' + mainDomain)) {
-            thirdPartyDomains.add(srcDomain);
-          }
-        } catch {}
-      }
-    });
-
-    result.thirdPartyCookies = Array.from(thirdPartyDomains).slice(0, 10);
 
     // Deep Scan detections (only if scanType is 'deep')
     if (scanType === 'deep') {

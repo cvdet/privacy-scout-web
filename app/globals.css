@@ -60,7 +60,7 @@ body {
 .login-icon {
   width: 48px;
   height: 48px;
-  color: var(--accent);
+  color: var(--text-primary);
   margin-bottom: 16px;
 }
 
@@ -119,6 +119,12 @@ body {
   width: 100%;
   justify-content: center;
   padding: 10px 16px;
+  background: var(--text-primary);
+  color: white;
+}
+
+.login-btn:hover {
+  background: #333;
 }
 
 /* Header */
@@ -709,9 +715,25 @@ body {
   color: #9333ea;
 }
 
+.tag.cm-ensighten {
+  background: rgba(20, 184, 166, 0.1);
+  color: #0d9488;
+}
+
+.tag.cm-hubspot {
+  background: rgba(255, 122, 89, 0.1);
+  color: #ff5c35;
+}
+
 .tag.cm-default {
   background: var(--bg-tertiary);
   color: var(--text-secondary);
+}
+
+/* Vendor tag - orange/amber for data collectors */
+.tag.vendor {
+  background: rgba(245, 158, 11, 0.1);
+  color: #b45309;
 }
 
 /* Empty State */

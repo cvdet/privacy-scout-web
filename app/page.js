@@ -15,6 +15,8 @@ function getCmClass(vendor) {
   if (vendorLower.includes('securiti')) return 'cm-securiti';
   if (vendorLower.includes('transcend')) return 'cm-transcend';
   if (vendorLower.includes('ketch')) return 'cm-ketch';
+  if (vendorLower.includes('ensighten') || vendorLower.includes('cheq')) return 'cm-ensighten';
+  if (vendorLower.includes('hubspot')) return 'cm-hubspot';
   return 'cm-default';
 }
 
@@ -202,7 +204,7 @@ export default function Home() {
             cmp: [],
             consentSignals: [],
             tagManager: [],
-            thirdPartyCookies: [],
+            thirdPartyVendors: [],
             platform: [],
             dsar: [],
             trustCenter: [],
@@ -237,8 +239,8 @@ export default function Home() {
     if (results.length === 0) return;
 
     const headers = activeTab === 'quick'
-      ? ['URL', 'Status', 'CM', 'Consent Signals', 'Tag Manager', 'Third-Party Cookies', 'Platform']
-      : ['URL', 'Status', 'CM', 'Consent Signals', 'Tag Manager', 'Third-Party Cookies', 'Platform', 'DSAR', 'Trust Center', 'Privacy Policy Generator'];
+      ? ['URL', 'Status', 'CM', 'Consent Signals', 'Tag Manager', 'Third-Party Vendors', 'Platform']
+      : ['URL', 'Status', 'CM', 'Consent Signals', 'Tag Manager', 'Third-Party Vendors', 'Platform', 'DSAR', 'Trust Center', 'Privacy Policy Generator'];
 
     const rows = results.map(r => {
       const baseRow = [
@@ -247,7 +249,7 @@ export default function Home() {
         r.cmp?.join('; ') || '',
         r.consentSignals?.join('; ') || '',
         r.tagManager?.join('; ') || '',
-        r.thirdPartyCookies?.join('; ') || '',
+        r.thirdPartyVendors?.join('; ') || '',
         r.platform?.join('; ') || '',
       ];
 
@@ -555,7 +557,7 @@ export default function Home() {
                       <th>CM</th>
                       <th>Consent Signals</th>
                       <th>Tag Manager</th>
-                      <th>Third-Party Cookies</th>
+                      <th>Third-Party Vendors</th>
                       <th>Platform</th>
                     </tr>
                   </thead>
@@ -597,13 +599,13 @@ export default function Home() {
                             )}
                           </td>
                           <td>
-                            {result.thirdPartyCookies?.length > 0 ? (
+                            {result.thirdPartyVendors?.length > 0 ? (
                               <>
-                                {result.thirdPartyCookies.slice(0, 3).map((c, i) => (
-                                  <span key={i} className="tag cookie">{c}</span>
+                                {result.thirdPartyVendors.slice(0, 3).map((v, i) => (
+                                  <span key={i} className="tag vendor">{v}</span>
                                 ))}
-                                {result.thirdPartyCookies.length > 3 && (
-                                  <span className="tag cookie">+{result.thirdPartyCookies.length - 3} more</span>
+                                {result.thirdPartyVendors.length > 3 && (
+                                  <span className="tag vendor">+{result.thirdPartyVendors.length - 3} more</span>
                                 )}
                               </>
                             ) : (
