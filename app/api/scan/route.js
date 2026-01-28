@@ -95,7 +95,7 @@ const cookieBannerPatterns = {
     scripts: ['hs-banner.com', 'hscollectedforms.net'],
     elements: ['hs-banner-container', 'hs-cookie-banner', 'hs-eu-cookie-confirmation'],
     classes: ['hs-cookie-consent-banner'],
-    inlinePatterns: ['hs-banner.com', '__hs_cookie_cat_pref', 'cookieconsent="ignore"'],
+    inlinePatterns: ['js.hs-banner.com', 'hs-banner.com', '__hs_cookie_cat_pref', 'data-hs-ignore', 'hs-scriptloader'],
   },
 };
 
@@ -304,8 +304,8 @@ async function scanUrl(url, scanType = 'quick') {
       // Check for CMP-specific script sources
       if (patterns.scripts) {
         for (const scriptPattern of patterns.scripts) {
-          // Check script src attributes
-          const scriptFound = $(`script[src*="${scriptPattern}"]`).length > 0;
+          // Check script src attributes (case-insensitive via lowercase pattern)
+          const scriptFound = $(`script[src*="${scriptPattern}"], script[src*="${scriptPattern.toLowerCase()}"]`).length > 0;
           // Also check full HTML for CDN references (catches GTM-loaded scripts)
           const inlineFound = fullContent.includes(scriptPattern.toLowerCase());
           if (scriptFound || inlineFound) {
