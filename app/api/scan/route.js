@@ -92,10 +92,10 @@ const cookieBannerPatterns = {
     inlinePatterns: ['ENSIGHTEN_PRIVACY', 'checkEnsightenConsent'],
   },
   'HubSpot': {
-    scripts: ['js.hs-banner.com', 'js.hscollectedforms.net/collectedforms'],
-    elements: ['hs-banner-container', 'hs-cookie-banner'],
+    scripts: ['hs-banner.com', 'hscollectedforms.net'],
+    elements: ['hs-banner-container', 'hs-cookie-banner', 'hs-eu-cookie-confirmation'],
     classes: ['hs-cookie-consent-banner'],
-    inlinePatterns: ['hs-banner.com', '__hs_cookie_cat_pref'],
+    inlinePatterns: ['hs-banner.com', '__hs_cookie_cat_pref', 'cookieconsent="ignore"'],
   },
 };
 
@@ -160,6 +160,13 @@ const thirdPartyVendorPatterns = {
   'VWO': ['visualwebsiteoptimizer.com', 'vwo.com'],
   'AB Tasty': ['abtasty.com'],
   'LaunchDarkly': ['launchdarkly.com'],
+  'AdRoll': ['s.adroll.com', 'adroll.com/j/roundtrip'],
+  'Demandbase': ['tag.demandbase.com', 'demandbase_js_lib'],
+  'Reddit Pixel': ['redditstatic.com/ads/pixel'],
+  '6sense': ['6sense.com', 'j.6sc.co'],
+  'Bombora': ['bombora.com', 'ml314.com'],
+  'Clearbit': ['clearbit.com', 'reveal.clearbit'],
+  'ZoomInfo': ['ws.zoominfo.com', 'zoominfo.com/pixel'],
 };
 
 // Platform - website/CMS type only
