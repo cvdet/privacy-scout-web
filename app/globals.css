@@ -627,7 +627,8 @@ body {
 }
 
 .url-cell {
-  max-width: 180px;
+  max-width: 280px;
+  min-width: 200px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -730,10 +731,10 @@ body {
   color: var(--text-secondary);
 }
 
-/* Vendor tag - orange/amber for data collectors */
+/* Vendor tag - gray for third-party data collectors */
 .tag.vendor {
-  background: rgba(245, 158, 11, 0.1);
-  color: #b45309;
+  background: var(--bg-tertiary);
+  color: var(--text-secondary);
 }
 
 /* Empty State */

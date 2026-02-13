@@ -11,11 +11,23 @@ const cookieBannerPatterns = {
     elements: ['onetrust-banner-sdk', 'onetrust-consent-sdk', 'optanon-alert-box-wrapper'],
     // OneTrust-specific classes (settings buttons, etc)
     classes: ['ot-sdk-show-settings', 'optanon-toggle-display'],
+    // Catch OneTrust CSS selectors and config IDs when script is dynamically loaded
+    inlinePatterns: [
+      '#onetrust-consent-sdk', '#onetrust-banner-sdk', '#onetrust-pc-sdk',
+      'onetrust-consent-sdk', 'onetrust-banner-sdk',
+      '"onetrust',  // JSON keys like "oneTrustTCFConfigId" (stackoverflow.com style)
+    ],
+  },
+  'Possibly OneTrust (Custom Loader)': {
+    // Cloudflare Pages delivery - often used as white-label OneTrust loader
+    scripts: ['cookie-consent-cdn-prod.pages.dev'],
   },
   'Cookiebot': {
     scripts: ['consent.cookiebot.com', 'consentcdn.cookiebot.com'],
     elements: ['CybotCookiebotDialog', 'CybotCookiebotDialogBody'],
     classes: ['CybotCookiebotDialogActive'],
+    // Catch Cookiebot CSS selectors when script is dynamically loaded
+    inlinePatterns: ['#CybotCookiebotDialog', 'CookiebotOnDialogInit', 'CybotCookiebotDialogPoweredby'],
   },
   'TrustArc': {
     scripts: ['consent.trustarc.com', 'consent-pref.trustarc.com', 'trustarc.mgr.consensu.org'],
@@ -96,6 +108,17 @@ const cookieBannerPatterns = {
     elements: ['hs-banner-container', 'hs-cookie-banner', 'hs-eu-cookie-confirmation'],
     classes: ['hs-cookie-consent-banner'],
     inlinePatterns: ['js.hs-banner.com', 'hs-banner.com', '__hs_cookie_cat_pref', 'data-hs-ignore', 'hs-scriptloader'],
+  },
+  'CookieHub': {
+    scripts: ['cookiehub.net', 'cdn.cookiehub.eu'],
+    elements: ['cookiehub-container'],
+    inlinePatterns: ['cookiehub.net', 'cdn.cookiehub.eu'],
+  },
+  'CookieConsent (OrestBida)': {
+    // Popular open-source cookie consent from GitHub
+    inlinePatterns: ['data-cookiecategory', 'cc_cookie'],
+    elements: ['cc-main', 'cc--anim'],
+    classes: ['show--consent', 'c-bn'],
   },
 };
 
